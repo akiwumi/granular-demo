@@ -463,6 +463,12 @@ button { cursor: pointer; }
     flex: 0 0 min(88vw, 420px);
     min-width: min(88vw, 420px);
   }
+  .profile-editor {
+    grid-template-columns: 1fr;
+  }
+  .profile-editor .avatar-large {
+    justify-self: center;
+  }
   .bar-row {
     grid-template-columns: 98px 1fr 54px;
     font-size: 12px;

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ensureSeeded, getAll, getOne, putOne, resetLocalDb } from "./db.js";
+import { ensureSeeded, getAll, getOne, putOne } from "./db.js";
 
 const currency = new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 0 });
 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -62,8 +62,6 @@ const nav = [
   ["reports", "▧", "Reports"],
   ["integrations", "⚙", "Integrations"],
   ["settings", "☼", "User Settings"],
-  ["appsettings", "◎", "App Settings"],
-  ["admin", "✎", "Admin"],
   ["faq", "?", "FAQ"],
   ["help", "ⓘ", "Help"],
   ["contact", "✉", "Contact"],
@@ -146,8 +144,6 @@ const moduleCopy = {
   car: ["Car", "Fuel, parking, insurance, MOT, repairs, and servicing.", ["One car", "Running cost", "Renewals"]],
   holidays: ["Holidays", "Spain target, Greece alternative, travel spending, and card fees.", ["Spain target", "Greece alternative", "Spending money"]],
   household: ["Household Profile", "Members, pets, car, location, assumptions, and privacy labels.", ["Members", "Assumptions", "Privacy"]],
-  appsettings: ["App Settings", "Locale, tax assumptions, source selection, imports, exports, and feature flags.", ["Currency and locale", "Data controls", "Feature flags"]],
-  admin: ["Admin And Setup", "Manipulate users, data, alerts, reports, onboarding, and seed health.", ["Setup control", "Seed health", "Onboarding editor"]],
   faq: ["FAQ", "Searchable frequently asked questions for local household finance.", ["Receipts", "Inflation", "Privacy"]],
   help: ["Help Centre", "Guides and contextual help for every major screen.", ["Getting started", "Guides", "Contextual help"]],
   videos: ["Instructional Videos", "Seeded video cards with transcripts, topics, and completion status.", ["Getting started with Granular", "Searching purchases", "Understanding shrinkflation"]],
@@ -197,11 +193,6 @@ const secondaryLinks = {
   "Members": "household",
   "Assumptions": "sources",
   "Privacy": "settings",
-  "Currency and locale": "appsettings",
-  "Data controls": "admin",
-  "Feature flags": "admin",
-  "Setup control": "admin",
-  "Seed health": "admin",
   "Onboarding editor": "settings",
   "Source notes": "sources",
   "Local disclosure": "sources"
@@ -1301,10 +1292,28 @@ function Settings({ user, refresh, go, data, route }) {
   const requestedTab = routeParam(route || "", "tab") === "bank-cards" ? "Bank & Cards" : "Account";
   const [tab, setTab] = useState(requestedTab);
   const [avatarMode, setAvatarMode] = useState("photo");
+  const [avatarFit, setAvatarFit] = useState(user.avatarFit || { scale: 1, x: 50, y: 50 });
   const recommendationsOn = aiRecommendationsEnabled(data.settings);
   useEffect(() => {
     setTab(requestedTab);
   }, [requestedTab]);
+  useEffect(() => {
+    setAvatarFit(user.avatarFit || { scale: 1, x: 50, y: 50 });
+  }, [user.id, user.avatarFit]);
+  async function saveAvatarFit(nextFit = avatarFit) {
+    await putOne("users", { ...user, avatarFit: nextFit });
+    await refresh();
+  }
+  async function uploadProfileImage(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const dataUrl = await fileToDataUrl(file);
+    const nextFit = { scale: 1, x: 50, y: 50 };
+    await putOne("users", { ...user, avatarUrl: dataUrl, avatarFit: nextFit });
+    setAvatarMode("photo");
+    setAvatarFit(nextFit);
+    await refresh();
+  }
   async function addPaymentAccount(kind) {
     await putOne("payment_accounts", newPaymentAccount(kind));
     await refresh();
@@ -1330,7 +1339,18 @@ function Settings({ user, refresh, go, data, route }) {
         <section>
           <h2>{tab}</h2>
           {tab === "Account" && <>
-            <div className="hero-cta"><Avatar user={user} mode={avatarMode} /><button className="primary" onClick={() => setAvatarMode("photo")}>Use Profile Image</button><button className="ghost" onClick={() => setAvatarMode("initials")}>Use Initials</button></div>
+            <div className="profile-editor">
+              <Avatar user={{ ...user, avatarFit }} mode={avatarMode} size="large" />
+              <div className="profile-editor-controls">
+                <div className="hero-cta compact-actions"><label className="primary file-button">Upload image<input type="file" accept="image/*" onChange={uploadProfileImage} /></label><button className="ghost" onClick={() => setAvatarMode("photo")}>Use Profile Image</button><button className="ghost" onClick={() => setAvatarMode("initials")}>Use Initials</button></div>
+                <div className="field-grid block">
+                  <label className="field">Zoom<input type="range" min="1" max="2.2" step="0.05" value={avatarFit.scale || 1} onChange={(event) => setAvatarFit({ ...avatarFit, scale: Number(event.target.value) })} onMouseUp={() => saveAvatarFit()} onTouchEnd={() => saveAvatarFit()} /></label>
+                  <label className="field">Horizontal fit<input type="range" min="0" max="100" value={avatarFit.x ?? 50} onChange={(event) => setAvatarFit({ ...avatarFit, x: Number(event.target.value) })} onMouseUp={() => saveAvatarFit()} onTouchEnd={() => saveAvatarFit()} /></label>
+                  <label className="field">Vertical fit<input type="range" min="0" max="100" value={avatarFit.y ?? 50} onChange={(event) => setAvatarFit({ ...avatarFit, y: Number(event.target.value) })} onMouseUp={() => saveAvatarFit()} onTouchEnd={() => saveAvatarFit()} /></label>
+                  <button className="secondary" onClick={() => saveAvatarFit()}>Save image fit</button>
+                </div>
+              </div>
+            </div>
             <div className="field-grid block"><label className="field">First Name<input value={user.name.split(" ")[0]} readOnly /></label><label className="field">Last Name<input value={user.name.split(" ")[1]} readOnly /></label><label className="field">Email<input value={user.email} readOnly /></label><label className="field">Preferred dashboard<select defaultValue="Household" onChange={(event) => go(event.target.value === "Groceries" ? "grocery" : event.target.value === "Kids" ? "kids" : event.target.value === "Personal" ? "finance" : "dashboard")}><option>Household</option><option>Personal</option><option>Kids</option><option>Groceries</option></select></label></div>
           </>}
           {tab === "Notifications" && <NotificationSettings settings={data.settings} onToggle={toggleNotification} />}
@@ -1352,10 +1372,10 @@ function Contact({ user }) {
     <>
       <PageHead title="Contact" subtitle="Local mock contact page for demo purposes." />
       <section className="card">
-        <div className="field-grid"><label className="field">Name<input defaultValue={user.name} /></label><label className="field">Email<input defaultValue={user.email} /></label><label className="field">Topic<select><option>Receipt issue</option><option>Budget question</option><option>Data export</option><option>Admin/setup</option></select></label><label className="field">Priority<select><option>Normal</option><option>High</option></select></label><label className="field full">Message<textarea rows="5" placeholder="Describe the local demo issue" /></label></div>
+        <div className="field-grid"><label className="field">Name<input defaultValue={user.name} /></label><label className="field">Email<input defaultValue={user.email} /></label><label className="field">Topic<select><option>Receipt issue</option><option>Budget question</option><option>Data export</option><option>Account setup</option></select></label><label className="field">Priority<select><option>Normal</option><option>High</option></select></label><label className="field full">Message<textarea rows="5" placeholder="Describe the local demo issue" /></label></div>
         <button className="primary" onClick={() => setSaved(true)}>Save message</button>
-        <p>{saved ? "Saved locally as REF-GR-2048. View/manage messages in Admin." : "Demo disclosure: no real email backend is connected."}</p>
-        {saved && <a className="ghost link-btn" href="#admin">Open Admin messages</a>}
+        <p>{saved ? "Saved locally as REF-GR-2048. View account setup and preferences in Settings." : "Demo disclosure: no real email backend is connected."}</p>
+        {saved && <a className="ghost link-btn" href="#settings">Open Settings</a>}
       </section>
     </>
   );
@@ -1472,14 +1492,9 @@ function RecordsExplorer({ data }) {
 function GenericModule({ route, data, refresh }) {
   const routeName = baseRoute(route);
   const [title, subtitle, cards] = moduleCopy[routeName] || moduleCopy.dashboard || ["Dashboard", "", []];
-  async function reset() {
-    if (routeName !== "admin") return;
-    await resetLocalDb();
-    await refresh();
-  }
   return (
     <>
-      <PageHead title={title} subtitle={subtitle} action={routeName === "admin" ? <button className="danger" onClick={reset}>Reset local DB</button> : null} />
+      <PageHead title={title} subtitle={subtitle} />
       <PlanningDataSection route={routeName} data={data} />
       <div className="grid module-list">{cards.map((title) => <section className="card module-card" key={title}><h2>{title}</h2><p>{moduleDescription(title)}</p><a className="ghost link-btn" href={`#${secondaryLinks[title] || routeName}`}>Open</a></section>)}</div>
       <div className="grid two block">
@@ -2303,13 +2318,23 @@ function Brand({ label }) {
   return <div className="brand"><div className="mark">↗</div><span>{label}</span></div>;
 }
 
-function Avatar({ user, mode = "photo" }) {
+function Avatar({ user, mode = "photo", size = "normal" }) {
   const fallbackUrl = user.avatar === "sarah" || user.id === "mother" ? "/avatars/sarah-hughes.svg" : user.avatar === "mark" || user.id === "father" ? "/avatars/mark-hughes.svg" : "";
   const avatarUrl = user.avatarUrl || fallbackUrl;
+  const fit = user.avatarFit || { scale: 1, x: 50, y: 50 };
   if (mode === "photo" && avatarUrl) {
-    return <img className="avatar avatar-image" src={avatarUrl} alt={`${user.name} profile`} />;
+    return <span className={`avatar avatar-frame ${size === "large" ? "avatar-large" : ""}`}><img className="avatar-image" src={avatarUrl} alt={`${user.name} profile`} style={{ objectPosition: `${fit.x ?? 50}% ${fit.y ?? 50}%`, transform: `scale(${fit.scale || 1})` }} /></span>;
   }
-  return <div className={`avatar ${mode === "photo" ? "avatar-photo" : ""} avatar-${user.avatar || user.id}`} style={{ backgroundColor: `${user.colour}22`, color: user.colour }}>{mode === "photo" ? <span>{user.initials}</span> : user.initials}</div>;
+  return <div className={`avatar ${size === "large" ? "avatar-large" : ""} ${mode === "photo" ? "avatar-photo" : ""} avatar-${user.avatar || user.id}`} style={{ backgroundColor: `${user.colour}22`, color: user.colour }}>{mode === "photo" ? <span>{user.initials}</span> : user.initials}</div>;
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
 }
 
 function labelFor(key) {

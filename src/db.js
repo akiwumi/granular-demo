@@ -393,7 +393,11 @@ export const seed = {
 export async function ensureSeeded() {
   const existing = await getAll("users");
   if (existing.length) {
-    await putMany("users", seed.users);
+    await putMany("users", existing.map((user) => {
+      const seeded = seed.users.find((item) => item.id === user.id);
+      if (!seeded) return user;
+      return { ...seeded, ...user, avatarUrl: user.avatarUrl || seeded.avatarUrl, avatarFit: user.avatarFit || seeded.avatarFit };
+    }));
     const transactions = await getAll("transactions");
     if (transactions.length < seed.transactions.length) await putMany("transactions", seed.transactions);
     const items = await getAll("receipt_items");
