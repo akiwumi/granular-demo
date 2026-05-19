@@ -40,6 +40,7 @@ const nav = [
   ["monthly", "▤", "Monthly View"],
   ["finance", "↗", "Household Money"],
   ["spending", "⌕", "Spending Explorer"],
+  ["trends", "▤", "Spending Trends"],
   ["receipts", "▤", "Receipts"],
   ["receipt-detail", "◫", "Receipt Detail"],
   ["item-detail", "◇", "Item Detail"],
@@ -412,6 +413,7 @@ function Screen(props) {
   if (routeName === "monthly") return <MonthlyView {...props} />;
   if (routeName === "finance") return <Finance {...props} />;
   if (routeName === "spending") return <SpendingExplorer {...props} />;
+  if (routeName === "trends") return <SpendingTrends {...props} />;
   if (routeName === "receipts") return <ReceiptItems {...props} />;
   if (routeName === "receipt-detail") return <ReceiptDetailPage {...props} />;
   if (routeName === "item-detail") return <ItemDetailPage {...props} />;
@@ -450,6 +452,11 @@ function AIAssistant({ data, refresh, go }) {
   const [instruction, setInstruction] = useState("");
   const [status, setStatus] = useState("");
   const [result, setResult] = useState(null);
+  const [health, setHealth] = useState(null);
+  const recommendationsOn = aiRecommendationsEnabled(data.settings);
+  useEffect(() => {
+    fetch("http://127.0.0.1:8787/api/health").then((response) => response.json()).then(setHealth).catch((error) => setHealth({ ok: false, error: error.message }));
+  }, []);
   const compactContext = useMemo(() => ({
     categories: [...new Set((data.yearlySpend || []).map((row) => row.category))],
     receiptItems: data.receiptItems.map(({ id, item, variant, seller, category, buyer, lineTotal, purchasedAt, tags }) => ({ id, item, variant, seller, category, buyer, lineTotal, purchasedAt, tags })),
@@ -480,6 +487,16 @@ function AIAssistant({ data, refresh, go }) {
   return (
     <>
       <PageHead title="AI Assistant" subtitle="Search and manipulate local household finance data using your OpenAI API key." />
+      <section className="card block">
+        <h2>AI connection status</h2>
+        <TableRows rows={[
+          ["Recommendations", recommendationsOn ? "On" : "Off in Settings"],
+          ["Local proxy", health ? (health.ok ? "Running" : `Not reachable: ${health.error}`) : "Checking..."],
+          ["API key loaded", health?.hasKey ? "Yes" : "No"],
+          ["Model", health?.model || "Unknown until proxy responds"],
+          ["Fix if not working", "Stop the old dev server, run npm run dev from granula_dummy, and open http://127.0.0.1:5173"]
+        ]} />
+      </section>
       <section className="card">
         <label className="field">Ask for a search or data change<textarea rows="4" value={instruction} onChange={(event) => setInstruction(event.target.value)} placeholder="Examples: find Tesco purchases; set household monthly income to 6800; set Groceries annual budget to 9500; tag green jacket as school uniform" /></label>
         <div className="hero-cta"><button className="primary" onClick={askAi}>Run AI action</button><button className="ghost" onClick={() => setInstruction("find all Tesco purchases")}>Example search</button><button className="ghost" onClick={() => setInstruction("set household monthly income to 6800")}>Example income edit</button><button className="ghost" onClick={() => setInstruction("set Groceries annual budget to 9500")}>Example budget edit</button></div>
@@ -694,6 +711,64 @@ function SpendingExplorer({ data, go, route }) {
         </section>
         <ItemDetail item={current} go={go} />
       </div>
+    </>
+  );
+}
+
+function SpendingTrends({ data }) {
+  const recommendationsOn = aiRecommendationsEnabled(data.settings);
+  const categories = ["All", ...new Set(data.receiptItems.map((item) => item.category))].sort();
+  const [category, setCategory] = useState("Groceries");
+  const categoryItems = data.receiptItems.filter((item) => category === "All" || item.category === category);
+  const itemGroups = spendingTrendGroups(categoryItems);
+  const [selectedKey, setSelectedKey] = useState("");
+  const selected = itemGroups.find((item) => item.key === selectedKey) || itemGroups[0];
+  const monthlyRows = selected ? months.map((month, index) => {
+    const rows = selected.items.filter((item) => new Date(item.purchasedAt).getMonth() === index);
+    return { month, count: rows.length, spend: sumMoney(rows), avg: rows.length ? sumMoney(rows) / rows.length : 0 };
+  }) : [];
+  const categoryMonthly = months.map((month, index) => {
+    const rows = categoryItems.filter((item) => new Date(item.purchasedAt).getMonth() === index);
+    return [month, Math.round(sumMoney(rows))];
+  });
+  const behaviour = selected ? analysePurchasePattern(selected, monthlyRows) : [];
+  return (
+    <>
+      <PageHead title="Spending Trends" subtitle="Filter purchases by category, drill into items, and compare monthly frequency, item cost, annual spend, and habit patterns." />
+      <section className="card block">
+        <div className="toolbar-inline">
+          <label className="field">Buying category<select value={category} onChange={(event) => { setCategory(event.target.value); setSelectedKey(""); }}>{categories.map((item) => <option key={item}>{item}</option>)}</select></label>
+          <label className="field">Specific item<select value={selected?.key || ""} onChange={(event) => setSelectedKey(event.target.value)}>{itemGroups.map((item) => <option key={item.key} value={item.key}>{item.item} · {item.seller}</option>)}</select></label>
+          <a className="ghost link-btn" href="#ai">Ask AI to search or change data</a>
+        </div>
+      </section>
+      <div className="grid three block">
+        <section className="card"><h2>Category spend</h2><div className="metric-value">{currency.format(sumMoney(categoryItems))}</div><p>{categoryItems.length} item lines in this category filter.</p></section>
+        <section className="card"><h2>Selected item frequency</h2><div className="metric-value">{selected?.annualCount || 0}x</div><p>{selected ? `${selected.item} from ${selected.seller}` : "Choose an item."}</p></section>
+        <section className="card"><h2>Average item cost</h2><div className="metric-value">{currency.format(selected?.averageCost || 0)}</div><p>Annual spend {currency.format(selected?.annualSpend || 0)}.</p></section>
+      </div>
+      <div className="grid two block">
+        <section className="card"><h2>{category} monthly trend</h2><Bars rows={categoryMonthly} id={`trends-${slug(category)}`} from="trends" /></section>
+        <section className="card"><h2>AI behaviour analysis {recommendationsOn ? <span className="status">On</span> : <span className="status warn">Off</span>}</h2>{recommendationsOn ? <Insights items={behaviour} /> : <p>AI recommendations are turned off in Settings. Trend data still updates locally.</p>}</section>
+      </div>
+      <section className="card block annual-matrix-card">
+        <h2>Item purchase pattern</h2>
+        <div className="annual-table-wrap">
+          <table className="table annual-table">
+            <thead><tr><th>Month</th><th>Times bought</th><th>Total cost</th><th>Average cost</th><th>Pattern</th></tr></thead>
+            <tbody>{monthlyRows.map((row) => <tr key={row.month}><td data-label="Month">{row.month}</td><td data-label="Times bought">{row.count}</td><td data-label="Total cost">{currency.format(row.spend)}</td><td data-label="Average cost">{row.count ? currency.format(row.avg) : "-"}</td><td data-label="Pattern">{row.count > 1 ? "Repeated purchase" : row.count ? "Single purchase" : "No purchase"}</td></tr>)}</tbody>
+          </table>
+        </div>
+      </section>
+      <section className="card block annual-matrix-card">
+        <h2>Category item breakdown</h2>
+        <div className="annual-table-wrap">
+          <table className="table annual-table">
+            <thead><tr><th>Item</th><th>Seller</th><th>Frequency</th><th>Annual cost</th><th>Avg cost</th><th>First</th><th>Latest</th><th>Receipt</th></tr></thead>
+            <tbody>{itemGroups.map((item) => <tr key={item.key} className={selected?.key === item.key ? "selected-row" : ""} onClick={() => setSelectedKey(item.key)}><td data-label="Item"><strong>{item.item}</strong></td><td data-label="Seller">{item.seller}</td><td data-label="Frequency">{item.annualCount}</td><td data-label="Annual cost">{currency.format(item.annualSpend)}</td><td data-label="Avg cost">{currency.format(item.averageCost)}</td><td data-label="First">{item.firstDate}</td><td data-label="Latest">{item.latestDate}</td><td data-label="Receipt"><a className="source-link" href={`#item-detail?id=${item.id}&from=trends`} onClick={(event) => event.stopPropagation()}>Open</a></td></tr>)}</tbody>
+          </table>
+        </div>
+      </section>
     </>
   );
 }
@@ -1059,19 +1134,24 @@ function Integrations({ data }) {
   );
 }
 
-function Settings({ user, refresh, go }) {
+function Settings({ user, refresh, go, data }) {
   const [tab, setTab] = useState("Account");
   const [avatarMode, setAvatarMode] = useState("photo");
+  const recommendationsOn = aiRecommendationsEnabled(data.settings);
   async function replay() {
     await putOne("onboarding", { id: "state", step: 0, complete: false });
     await refresh();
     go("onboarding");
   }
+  async function toggleAiRecommendations() {
+    await putOne("settings", { id: "ai-recommendations-enabled", enabled: !recommendationsOn, source: "User settings" });
+    await refresh();
+  }
   return (
     <>
       <PageHead title="Account Settings" subtitle="Separate profile settings for mother and father." />
       <div className="card settings-layout">
-        <aside className="settings-menu"><div className="nav-list">{["Account", "Notifications", "Privacy", "Permissions", "Accessibility", "Onboarding"].map((item) => <button className={`nav-item settings-tab ${tab === item ? "active" : ""}`} onClick={() => setTab(item)} key={item}>{item}</button>)}</div></aside>
+        <aside className="settings-menu"><div className="nav-list">{["Account", "AI", "Notifications", "Privacy", "Permissions", "Accessibility", "Onboarding"].map((item) => <button className={`nav-item settings-tab ${tab === item ? "active" : ""}`} onClick={() => setTab(item)} key={item}>{item}</button>)}</div></aside>
         <section>
           <h2>{tab}</h2>
           {tab === "Account" && <>
@@ -1079,6 +1159,7 @@ function Settings({ user, refresh, go }) {
             <div className="field-grid block"><label className="field">First Name<input value={user.name.split(" ")[0]} readOnly /></label><label className="field">Last Name<input value={user.name.split(" ")[1]} readOnly /></label><label className="field">Email<input value={user.email} readOnly /></label><label className="field">Preferred dashboard<select defaultValue="Household" onChange={(event) => go(event.target.value === "Groceries" ? "grocery" : event.target.value === "Kids" ? "kids" : event.target.value === "Personal" ? "finance" : "dashboard")}><option>Household</option><option>Personal</option><option>Kids</option><option>Groceries</option></select></label></div>
           </>}
           {tab === "Notifications" && ["Bill reminders", "Overspend alerts", "Shrinkflation alerts", "Child allowance reminders", "Card charge warnings", "Holiday savings reminders"].map((item) => <div className="insight-row setting-switch" key={item}><strong>{item}</strong><span className="switch" /></div>)}
+          {tab === "AI" && <><div className="insight-row setting-switch"><div><strong>AI recommendations</strong><p>Turns behaviour-pattern recommendations on or off across Spending Trends and AI summaries.</p></div><button className={recommendationsOn ? "primary" : "ghost"} onClick={toggleAiRecommendations}>{recommendationsOn ? "On" : "Off"}</button></div><TableRows rows={[["AI proxy", "http://127.0.0.1:8787/api/ai"], ["Start command", "npm run dev"], ["Data sent", "Local app context for the current request only"]]} /></>}
           {tab === "Privacy" && <TableRows rows={[["Personal spending", "Hidden from shared reports by default"], ["Shared/family labels", "Shown in household dashboards"], ["Local data", "Stored in IndexedDB only"]]} />}
           {tab === "Permissions" && <TableRows rows={user.permissions.map((permission) => [permission, "Enabled"])} />}
           {tab === "Accessibility" && <TableRows rows={[["Compact mode", "Available"], ["Larger text", "Available"], ["Reduced motion", "Available"], ["High contrast", "Available"]]} />}
@@ -1344,6 +1425,42 @@ function categoryTotals(items) {
     acc[item.category] = (acc[item.category] || 0) + item.lineTotal;
     return acc;
   }, {}));
+}
+
+function spendingTrendGroups(items) {
+  return Object.values(items.reduce((acc, item) => {
+    const name = normaliseFrequencyItem(item.item);
+    const key = `${name}|${item.seller}`;
+    if (!acc[key]) acc[key] = { key, item: name, seller: item.seller, category: item.category, id: item.id, annualCount: 0, annualSpend: 0, items: [], firstDate: item.purchasedAt, latestDate: item.purchasedAt, averageCost: 0 };
+    acc[key].annualCount += 1;
+    acc[key].annualSpend += item.lineTotal;
+    acc[key].items.push(item);
+    if (item.purchasedAt < acc[key].firstDate) acc[key].firstDate = item.purchasedAt;
+    if (item.purchasedAt > acc[key].latestDate) {
+      acc[key].latestDate = item.purchasedAt;
+      acc[key].id = item.id;
+    }
+    acc[key].averageCost = acc[key].annualSpend / acc[key].annualCount;
+    return acc;
+  }, {})).sort((a, b) => b.annualSpend - a.annualSpend || b.annualCount - a.annualCount);
+}
+
+function analysePurchasePattern(group, monthlyRows) {
+  const activeMonths = monthlyRows.filter((row) => row.count > 0).length;
+  const peak = monthlyRows.reduce((best, row) => row.spend > best.spend ? row : best, monthlyRows[0] || { month: "-", spend: 0, count: 0 });
+  const latest = group.items.slice().sort((a, b) => a.purchasedAt.localeCompare(b.purchasedAt)).at(-1);
+  const first = group.items.slice().sort((a, b) => a.purchasedAt.localeCompare(b.purchasedAt))[0];
+  const priceMove = latest && first ? latest.unitPrice - first.unitPrice : 0;
+  return [
+    `${group.item} appears in ${activeMonths} month${activeMonths === 1 ? "" : "s"}, with ${group.annualCount} recorded purchase${group.annualCount === 1 ? "" : "s"}.`,
+    `Highest spend month is ${peak.month} at ${currency.format(peak.spend)}, so that month should be checked against receipts and household events.`,
+    priceMove > 0 ? `Latest unit price is ${currency.format(priceMove)} higher than the first recorded price; consider seller comparison or substitution.` : `Price is stable or lower against the first recorded price; keep this seller if quality is acceptable.`
+  ];
+}
+
+function aiRecommendationsEnabled(settings) {
+  const setting = (settings || []).find((item) => item.id === "ai-recommendations-enabled");
+  return setting?.enabled !== false;
 }
 
 function annualFrequencyItems(realItems, selectedYear) {

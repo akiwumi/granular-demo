@@ -1,13 +1,15 @@
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const PORT = Number(process.env.AI_PORT || 8787);
+const APP_DIR = path.dirname(fileURLToPath(import.meta.url));
 loadEnvFile(".env.local");
 loadEnvFile(".env");
 
 function loadEnvFile(file) {
-  const fullPath = path.resolve(file);
+  const fullPath = path.resolve(APP_DIR, file);
   if (!fs.existsSync(fullPath)) return;
   for (const line of fs.readFileSync(fullPath, "utf8").split(/\r?\n/)) {
     const match = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.+?)\s*$/);
@@ -17,10 +19,12 @@ function loadEnvFile(file) {
 }
 
 function send(res, status, body) {
+  const origin = res.req?.headers.origin;
+  const allowedOrigin = ["http://127.0.0.1:5173", "http://localhost:5173"].includes(origin) ? origin : "http://127.0.0.1:5173";
   res.writeHead(status, {
     "content-type": "application/json",
-    "access-control-allow-origin": "http://127.0.0.1:5173",
-    "access-control-allow-methods": "POST, OPTIONS",
+    "access-control-allow-origin": allowedOrigin,
+    "access-control-allow-methods": "GET, POST, OPTIONS",
     "access-control-allow-headers": "content-type"
   });
   res.end(JSON.stringify(body));
@@ -53,6 +57,11 @@ function jsonFromText(text) {
 
 const server = http.createServer(async (req, res) => {
   if (req.method === "OPTIONS") return send(res, 204, {});
+  if (req.method === "GET" && req.url === "/api/health") return send(res, 200, {
+    ok: true,
+    hasKey: Boolean(process.env.OPENAI_API_KEY),
+    model: process.env.OPENAI_MODEL || "gpt-5.2"
+  });
   if (req.method !== "POST" || req.url !== "/api/ai") return send(res, 404, { error: "Not found" });
   try {
     const apiKey = process.env.OPENAI_API_KEY;
