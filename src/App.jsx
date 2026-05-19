@@ -788,8 +788,8 @@ function ReceiptItems({ data, go }) {
             <div className="metric-value">{currency.format(receipt.amount)}</div>
             <p>{receipt.items.length} item lines · final card charge matched</p>
             <table className="table">
-              <thead><tr><th>Product</th><th>Qty</th><th>Unit</th><th>Total</th></tr></thead>
-              <tbody>{receipt.items.map((item) => <tr key={item.id}><td data-label="Product"><button className="text-link" onClick={() => go(`item-detail?id=${item.id}&from=receipts`)}><strong>{item.item}</strong><br /><small>{item.variant}</small></button></td><td data-label="Qty">{item.quantity}</td><td data-label="Unit">{currency.format(item.unitPrice)}</td><td data-label="Total">{currency.format(item.lineTotal)}</td></tr>)}</tbody>
+              <thead><tr><th>Product</th><th>Qty</th><th>Unit</th><th>Total</th><th>Purchase date</th></tr></thead>
+              <tbody>{receipt.items.map((item) => <tr key={item.id}><td data-label="Product"><button className="text-link" onClick={() => go(`item-detail?id=${item.id}&from=receipts`)}><strong>{item.item}</strong><br /><small>{item.variant}</small></button></td><td data-label="Qty">{item.quantity}</td><td data-label="Unit">{currency.format(item.unitPrice)}</td><td data-label="Total">{currency.format(item.lineTotal)}</td><td data-label="Purchase date">{item.purchasedAt || receipt.date}</td></tr>)}</tbody>
             </table>
             <button className="ghost wide" onClick={() => go(`receipt-detail?id=${receipt.id}`)}>Open receipt detail</button>
           </section>
@@ -1283,7 +1283,7 @@ function RecordsExplorer({ data }) {
   const [category, setCategory] = useState("All");
   const categories = ["All", ...new Set(data.transactions.map((item) => item.category))].sort();
   const rows = data.transactions.filter((item) => {
-    const haystack = [item.merchant, item.category, item.owner, item.context, item.date].join(" ").toLowerCase();
+    const haystack = [item.merchant, item.category, item.owner, item.context, item.date, ...dateSearchTokens(item.date)].join(" ").toLowerCase();
     return (category === "All" || item.category === category) && (!query.trim() || haystack.includes(query.trim().toLowerCase()));
   });
   return (
@@ -1614,9 +1614,28 @@ function filterItemRows(items, query) {
   if (sellerMatches.length) return sellerMatches;
   const terms = trimmed.split(/\s+/).filter(Boolean);
   return items.filter((item) => {
-    const fields = [item.item, item.variant, item.category, item.buyer, item.quantity, ...(item.tags || [])].map((value) => String(value).toLowerCase());
+    const fields = [item.item, item.variant, item.category, item.buyer, item.quantity, item.purchasedAt, ...dateSearchTokens(item.purchasedAt), item.transaction?.date, ...dateSearchTokens(item.transaction?.date), ...(item.tags || [])].map((value) => String(value || "").toLowerCase());
     return terms.every((term) => fields.some((field) => field.split(/[^a-z0-9]+/).filter(Boolean).some((word) => word === term) || field === term || field.includes(` ${term} `)));
   });
+}
+
+function dateSearchTokens(dateValue) {
+  if (!dateValue) return [];
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return [String(dateValue)];
+  const yyyy = String(date.getFullYear());
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  const month = months[date.getMonth()];
+  return [
+    `${yyyy}-${mm}-${dd}`,
+    `${dd}/${mm}/${yyyy}`,
+    `${dd}-${mm}-${yyyy}`,
+    `${yyyy}-${mm}`,
+    `${month} ${yyyy}`,
+    month,
+    yyyy
+  ];
 }
 
 function applyIncomeOverride(rows, settings) {
