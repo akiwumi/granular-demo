@@ -281,6 +281,50 @@ button:disabled {
   padding-top: 12px;
   font-size: 18px;
 }
+.weekly-grocery-card {
+  grid-column: span 1;
+}
+.muted-copy {
+  color: #667085;
+  margin-top: -4px;
+}
+.grocery-list-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+.grocery-list-item {
+  border: 1px solid #e6ebf2;
+  border-radius: 12px;
+  padding: 14px;
+  display: grid;
+  gap: 9px;
+  background: #fbfdff;
+}
+.grocery-list-item div {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.grocery-list-item h3 {
+  margin: 0;
+  font-size: 18px;
+}
+.grocery-list-item p {
+  margin: 0;
+  font-weight: 800;
+}
+.grocery-list-item small {
+  color: #145bb8;
+  font-weight: 800;
+}
+.grocery-list-item span {
+  color: #667085;
+  font-size: 14px;
+  line-height: 1.35;
+}
 .profile-button {
   border: 1px solid var(--line);
   background: #fff;
