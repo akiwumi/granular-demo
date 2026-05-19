@@ -377,13 +377,6 @@ button { cursor: pointer; }
     margin-right: -2px;
     -webkit-overflow-scrolling: touch;
   }
-  .kpis::after,
-  .grid::after,
-  .report-cards::after,
-  .module-list::after {
-    content: "";
-    flex: 0 0 1px;
-  }
   .kpis > *,
   .grid > *,
   .report-cards > *,
@@ -400,8 +393,6 @@ button { cursor: pointer; }
     grid-template-columns: none;
   }
   .card {
-    max-height: calc(100dvh - 190px);
-    overflow: auto;
     padding: 14px;
   }
   .graph-card {
@@ -416,11 +407,11 @@ button { cursor: pointer; }
   .card.block,
   .annual-matrix-card,
   .weekly-grocery-card {
-    max-height: calc(100dvh - 180px);
+    max-height: none;
   }
   .table-scroll,
   .annual-table-wrap {
-    max-height: calc(100dvh - 250px);
+    max-height: min(62dvh, 560px);
     overflow: auto;
   }
   .table tr {
@@ -481,5 +472,31 @@ button { cursor: pointer; }
     left: 8px;
     right: 8px;
     bottom: 8px;
+  }
+  .mobile-scroll-arrows {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 66px;
+    z-index: 24;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+  }
+  .mobile-scroll-arrows button {
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: rgba(17, 24, 39, .92);
+    color: #fff;
+    box-shadow: var(--shadow);
+    font-size: 28px;
+    line-height: 1;
+    pointer-events: auto;
+  }
+  .mobile-scroll-arrows button:disabled {
+    opacity: 0;
+    pointer-events: none;
   }
 }

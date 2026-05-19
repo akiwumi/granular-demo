@@ -419,7 +419,52 @@ function Chrome({ active, data, user, go, refresh, children }) {
         </div>
         {children}
       </main>
+      <MobileScrollArrows />
       <nav className="bottom-nav">{[["dashboard", "Home"], ["spending", "Search"], ["calendar", "Calendar"], ["budgets", "Budgets"], ["settings", "More"]].map(([id, label]) => <a className={active === id ? "active" : ""} href={`#${id}`} key={id}>{label}</a>)}</nav>
+    </div>
+  );
+}
+
+function MobileScrollArrows() {
+  const [target, setTarget] = useState(null);
+  const [state, setState] = useState({ left: false, right: false });
+  useEffect(() => {
+    const selector = ".kpis, .main > .grid, .main > .report-cards, .main > .module-list, .chips, .tabs, .hero-cta, .toolbar-inline, .settings-layout";
+    function findTarget() {
+      if (window.innerWidth > 760) {
+        setTarget(null);
+        setState({ left: false, right: false });
+        return;
+      }
+      const centerY = window.innerHeight * 0.48;
+      const candidates = [...document.querySelectorAll(selector)].filter((node) => node.scrollWidth > node.clientWidth + 8);
+      const visible = candidates.map((node) => ({ node, rect: node.getBoundingClientRect() })).filter(({ rect }) => rect.bottom > 88 && rect.top < window.innerHeight - 96);
+      const chosen = visible.sort((a, b) => Math.abs((a.rect.top + a.rect.bottom) / 2 - centerY) - Math.abs((b.rect.top + b.rect.bottom) / 2 - centerY))[0]?.node || null;
+      setTarget(chosen);
+      if (!chosen) {
+        setState({ left: false, right: false });
+        return;
+      }
+      setState({ left: chosen.scrollLeft > 4, right: chosen.scrollLeft + chosen.clientWidth < chosen.scrollWidth - 4 });
+    }
+    findTarget();
+    window.addEventListener("resize", findTarget);
+    window.addEventListener("scroll", findTarget, { passive: true });
+    document.addEventListener("scroll", findTarget, true);
+    return () => {
+      window.removeEventListener("resize", findTarget);
+      window.removeEventListener("scroll", findTarget);
+      document.removeEventListener("scroll", findTarget, true);
+    };
+  }, []);
+  if (!target || (!state.left && !state.right)) return null;
+  function move(direction) {
+    target.scrollBy({ left: direction * Math.max(260, target.clientWidth * 0.88), behavior: "smooth" });
+  }
+  return (
+    <div className="mobile-scroll-arrows" aria-label="Section scroll controls">
+      <button disabled={!state.left} onClick={() => move(-1)} aria-label="Scroll section left">‹</button>
+      <button disabled={!state.right} onClick={() => move(1)} aria-label="Scroll section right">›</button>
     </div>
   );
 }
