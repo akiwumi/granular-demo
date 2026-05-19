@@ -277,8 +277,8 @@ const receiptCompletionItems = [
 
 export const seed = {
   users: [
-    { id: "mother", name: "Sarah Hughes", role: "Mother", initials: "SH", colour: "#1d72e8", avatar: "sarah", email: "sarah@hughes.local", permissions: ["household-admin", "budget-editor", "receipt-editor"] },
-    { id: "father", name: "Mark Hughes", role: "Father", initials: "MH", colour: "#109c92", avatar: "mark", email: "mark@hughes.local", permissions: ["budget-editor", "receipt-editor"] }
+    { id: "mother", name: "Sarah Hughes", role: "Mother", initials: "SH", colour: "#1d72e8", avatar: "sarah", avatarUrl: "/avatars/sarah-hughes.svg", email: "sarah@hughes.local", permissions: ["household-admin", "budget-editor", "receipt-editor"] },
+    { id: "father", name: "Mark Hughes", role: "Father", initials: "MH", colour: "#109c92", avatar: "mark", avatarUrl: "/avatars/mark-hughes.svg", email: "mark@hughes.local", permissions: ["budget-editor", "receipt-editor"] }
   ],
   household: [{
     id: "hughes",
@@ -387,6 +387,7 @@ export const seed = {
 export async function ensureSeeded() {
   const existing = await getAll("users");
   if (existing.length) {
+    await putMany("users", seed.users);
     const transactions = await getAll("transactions");
     if (transactions.length < seed.transactions.length) await putMany("transactions", seed.transactions);
     const items = await getAll("receipt_items");

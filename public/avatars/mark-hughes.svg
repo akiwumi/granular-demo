@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Mark Hughes profile image">
+  <defs>
+    <linearGradient id="bg" x1="30" y1="16" x2="210" y2="220" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#e9fbf5"/>
+      <stop offset="1" stop-color="#dbeafe"/>
+    </linearGradient>
+    <linearGradient id="hair" x1="82" y1="43" x2="162" y2="126" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3f312a"/>
+      <stop offset=".65" stop-color="#211916"/>
+      <stop offset="1" stop-color="#73645b"/>
+    </linearGradient>
+    <linearGradient id="jumper" x1="57" y1="156" x2="185" y2="236" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#109c92"/>
+      <stop offset="1" stop-color="#1d72e8"/>
+    </linearGradient>
+  </defs>
+  <rect width="240" height="240" rx="120" fill="url(#bg)"/>
+  <path d="M50 224c8-47 36-72 74-72 39 0 68 25 76 72H50Z" fill="url(#jumper)"/>
+  <path d="M99 143h49v35c0 14-49 14-49 0v-35Z" fill="#cf946f"/>
+  <path d="M84 103c0-35 17-57 41-57 25 0 42 22 42 57 0 35-18 58-42 58-23 0-41-23-41-58Z" fill="#dfab87"/>
+  <path d="M80 108c-10-4-12 23 2 27l6 1-2-27-6-1Zm90 0c10-4 12 23-2 27l-6 1 2-27 6-1Z" fill="#dfab87"/>
+  <path d="M81 99c1-33 20-56 49-56 28 0 45 21 43 54-12-20-30-28-55-27-13 0-25 9-37 29Z" fill="url(#hair)"/>
+  <path d="M94 111c7-6 17-6 24-1m17 0c7-5 17-5 24 1" fill="none" stroke="#30231f" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="107" cy="119" r="4" fill="#172033"/>
+  <circle cx="148" cy="119" r="4" fill="#172033"/>
+  <path d="M126 119c-4 12-6 20-2 24 3 3 8 2 11 0" fill="none" stroke="#a96d55" stroke-width="4" stroke-linecap="round"/>
+  <path d="M106 144c11 11 29 11 41 0" fill="none" stroke="#744339" stroke-width="5" stroke-linecap="round"/>
+  <path d="M95 137c16 22 45 23 62 1 0 18-11 33-31 33-19 0-31-15-31-34Z" fill="#53332c" opacity=".35"/>
+  <path d="M78 224c9-28 28-43 49-43 22 0 41 15 50 43H78Z" fill="#f8fbff" opacity=".26"/>
+</svg>

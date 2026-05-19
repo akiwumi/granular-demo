@@ -2218,6 +2218,9 @@ function Brand({ label }) {
 }
 
 function Avatar({ user, mode = "photo" }) {
+  if (mode === "photo" && user.avatarUrl) {
+    return <img className="avatar avatar-image" src={user.avatarUrl} alt={`${user.name} profile`} />;
+  }
   return <div className={`avatar ${mode === "photo" ? "avatar-photo" : ""} avatar-${user.avatar || user.id}`} style={{ backgroundColor: `${user.colour}22`, color: user.colour }}>{mode === "photo" ? <span>{user.initials}</span> : user.initials}</div>;
 }
 

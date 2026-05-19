@@ -362,6 +362,11 @@ button:disabled {
   gap: 8px;
   font-weight: 800;
 }
+.avatar-image {
+  object-fit: cover;
+  border: 2px solid #fff;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, .12);
+}
 .avatar-photo {
   position: relative;
   overflow: hidden;
