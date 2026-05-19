@@ -415,6 +415,7 @@ function Screen(props) {
   if (routeName === "receipts") return <ReceiptItems {...props} />;
   if (routeName === "receipt-detail") return <ReceiptDetailPage {...props} />;
   if (routeName === "item-detail") return <ItemDetailPage {...props} />;
+  if (routeName === "graph-detail") return <GraphDetailPage {...props} />;
   if (routeName === "cashflow") return <Cashflow {...props} />;
   if (routeName === "forecasting") return <Forecasting {...props} />;
   if (routeName === "grocery") return <GroceryIntelligence {...props} />;
@@ -582,7 +583,7 @@ function AnnualView({ data }) {
         <div className="annual-table-wrap">
           <table className="table annual-table">
             <thead><tr><th>Item</th><th>Seller</th><th>Category</th>{months.map((month) => <th key={month}>{month}</th>)}<th>Annual count</th><th>Annual spend</th><th>Open</th></tr></thead>
-            <tbody>{itemFrequency.map((row) => <tr key={`${row.item}-${row.seller}`}><td data-label="Item"><strong>{row.item}</strong></td><td data-label="Seller">{row.seller}</td><td data-label="Category">{row.category}</td>{months.map((month) => <td key={month} data-label={month}>{row.months[month]}</td>)}<td data-label="Annual count"><strong>{row.annualCount}</strong></td><td data-label="Annual spend">{currency.format(row.annualSpend)}</td><td data-label="Open"><a className="ghost link-btn" href={`#item-detail?id=${row.id}`}>Details</a></td></tr>)}</tbody>
+            <tbody>{itemFrequency.map((row) => <tr key={`${row.item}-${row.seller}`}><td data-label="Item"><strong>{row.item}</strong></td><td data-label="Seller">{row.seller}</td><td data-label="Category">{row.category}</td>{months.map((month) => <td key={month} data-label={month}>{row.months[month]}</td>)}<td data-label="Annual count"><strong>{row.annualCount}</strong></td><td data-label="Annual spend">{currency.format(row.annualSpend)}</td><td data-label="Open"><a className="ghost link-btn" href={`#item-detail?id=${row.id}&from=annual`}>Details</a></td></tr>)}</tbody>
           </table>
         </div>
       </section>
@@ -646,7 +647,7 @@ function Finance({ data, refresh }) {
         </div>
         <p>Changing income rewrites the income rows used by monthly surplus, annual surplus, budget planning, reports, and AI context.</p>
       </section>
-      <div className="grid module-list">{modules.map(([title, value]) => <section className="card module-card" key={title}><div className="metric-title">{title}<span>ⓘ</span></div><div className="metric-value">{value}</div><Spark values={series.cash.slice(0, 8)} color="#109c92" fill /></section>)}</div>
+      <div className="grid module-list">{modules.map(([title, value]) => <section className="card module-card graph-card" key={title}><div className="metric-title"><span>{title}</span><InfoIcon text={graphExplanation(title, "finance")} /></div><div className="metric-value">{value}</div><Spark id={`finance-${slug(title)}`} title={title} values={series.cash.slice(0, 8)} color="#109c92" from="finance" /></section>)}</div>
       <div className="grid two block"><section className="card"><h2>Budget burn by category</h2><Bars rows={[["Groceries", 82], ["Bills", 71], ["Kids", 64], ["Pets", 58], ["Transport", 77], ["Subscriptions", 91]]} /></section><section className="card"><h2>This month needs attention</h2><Insights items={["Cap work lunches at £45 per week.", "Increase credit-card repayment by £120.", "Move £250 from grocery underspend to Spain pot."]} /></section></div>
       <div className="block"><TableCard title="Source-backed household assumptions" rows={data.assumptions.values} heads={["Assumption", "Value", "Source basis"]} /></div>
     </>
@@ -680,7 +681,7 @@ function SpendingExplorer({ data, go, route }) {
             <thead><tr><th>Item</th><th>Seller</th><th>Buyer</th><th>Size</th><th>Line Total</th><th>Date</th></tr></thead>
             <tbody>{filtered.map((item) => (
               <tr key={item.id} onClick={() => setSelected(item)} className={current?.id === item.id ? "selected-row" : ""}>
-                <td data-label="Item"><button className="text-link" onClick={(event) => { event.stopPropagation(); go(`item-detail?id=${item.id}`); }}><strong>{item.item}</strong><br /><small>{item.variant}</small></button></td>
+                <td data-label="Item"><button className="text-link" onClick={(event) => { event.stopPropagation(); go(`item-detail?id=${item.id}&from=spending`); }}><strong>{item.item}</strong><br /><small>{item.variant}</small></button></td>
                 <td data-label="Seller">{item.seller}</td>
                 <td data-label="Buyer">{item.buyer}</td>
                 <td data-label="Size">{item.quantity}</td>
@@ -711,7 +712,7 @@ function ReceiptItems({ data, go }) {
             <div className="metric-value">{currency.format(receipt.amount)}</div>
             <table className="table">
               <thead><tr><th>Product</th><th>Qty</th><th>Unit</th><th>Total</th></tr></thead>
-              <tbody>{receipt.items.map((item) => <tr key={item.id}><td data-label="Product"><button className="text-link" onClick={() => go(`item-detail?id=${item.id}`)}><strong>{item.item}</strong><br /><small>{item.variant}</small></button></td><td data-label="Qty">{item.quantity}</td><td data-label="Unit">{currency.format(item.unitPrice)}</td><td data-label="Total">{currency.format(item.lineTotal)}</td></tr>)}</tbody>
+              <tbody>{receipt.items.map((item) => <tr key={item.id}><td data-label="Product"><button className="text-link" onClick={() => go(`item-detail?id=${item.id}&from=receipts`)}><strong>{item.item}</strong><br /><small>{item.variant}</small></button></td><td data-label="Qty">{item.quantity}</td><td data-label="Unit">{currency.format(item.unitPrice)}</td><td data-label="Total">{currency.format(item.lineTotal)}</td></tr>)}</tbody>
             </table>
             <button className="ghost wide" onClick={() => go(`receipt-detail?id=${receipt.id}`)}>Open receipt detail</button>
           </section>
@@ -776,7 +777,7 @@ function ReceiptDetailPage({ data, route, go }) {
         <h2>Item lines</h2>
         <table className="table">
           <thead><tr><th>Product</th><th>Category</th><th>Buyer</th><th>Qty</th><th>Unit</th><th>Total</th></tr></thead>
-          <tbody>{items.map((item) => <tr key={item.id}><td data-label="Product"><button className="text-link" onClick={() => go(`item-detail?id=${item.id}`)}><strong>{item.item}</strong><br /><small>{item.variant}</small></button></td><td data-label="Category">{item.category}</td><td data-label="Buyer">{item.buyer}</td><td data-label="Qty">{item.quantity}</td><td data-label="Unit">{currency.format(item.unitPrice)}</td><td data-label="Total">{currency.format(item.lineTotal)}</td></tr>)}</tbody>
+          <tbody>{items.map((item) => <tr key={item.id}><td data-label="Product"><button className="text-link" onClick={() => go(`item-detail?id=${item.id}&from=receipt-detail&receipt=${receipt.id}`)}><strong>{item.item}</strong><br /><small>{item.variant}</small></button></td><td data-label="Category">{item.category}</td><td data-label="Buyer">{item.buyer}</td><td data-label="Qty">{item.quantity}</td><td data-label="Unit">{currency.format(item.unitPrice)}</td><td data-label="Total">{currency.format(item.lineTotal)}</td></tr>)}</tbody>
         </table>
       </section>
     </>
@@ -832,12 +833,14 @@ function BudgetPlanner({ data }) {
 
 function ItemDetailPage({ data, route, go }) {
   const id = routeParam(route, "id") || data.receiptItems[0]?.id;
+  const from = routeParam(route, "from") || "spending";
+  const backTarget = from === "receipt-detail" ? `receipt-detail?id=${routeParam(route, "receipt") || data.receiptItems.find((record) => record.id === id)?.transactionId || ""}` : from;
   const item = data.receiptItems.find((record) => record.id === id) || data.receiptItems[0];
   const sellerItems = data.receiptItems.filter((record) => record.seller === item.seller);
   const categoryItems = data.receiptItems.filter((record) => record.category === item.category);
   return (
     <>
-      <PageHead title={item.item} subtitle={`${item.variant} · bought from ${item.seller}`} action={<button className="ghost" onClick={() => go("spending")}>Back to item search</button>} />
+      <PageHead title={item.item} subtitle={`${item.variant} · bought from ${item.seller}`} action={<button className="ghost" onClick={() => go(backTarget)}>Back to {navLabel(from)}</button>} />
       <div className="grid two">
         <ItemDetail item={item} go={go} />
         <section className="card"><h2>Seller history</h2><TableRows rows={sellerItems.map((record) => [record.item, `${record.purchasedAt} · ${currency.format(record.lineTotal)}`])} /></section>
@@ -1097,7 +1100,7 @@ function GroceryIntelligence({ data }) {
       </div>
       <section className="card block">
         <h2>Recent grocery and household product records</h2>
-        <table className="table"><thead><tr><th>Item</th><th>Seller</th><th>Buyer</th><th>Quantity</th><th>Total</th><th>Detail</th></tr></thead><tbody>{groceryItems.slice(0, 22).map((item) => <tr key={item.id}><td data-label="Item">{item.item}</td><td data-label="Seller">{item.seller}</td><td data-label="Buyer">{item.buyer}</td><td data-label="Quantity">{item.quantity}</td><td data-label="Total">{currency.format(item.lineTotal)}</td><td data-label="Detail"><a className="source-link" href={`#item-detail?id=${item.id}`}>Open</a></td></tr>)}</tbody></table>
+        <table className="table"><thead><tr><th>Item</th><th>Seller</th><th>Buyer</th><th>Quantity</th><th>Total</th><th>Detail</th></tr></thead><tbody>{groceryItems.slice(0, 22).map((item) => <tr key={item.id}><td data-label="Item">{item.item}</td><td data-label="Seller">{item.seller}</td><td data-label="Buyer">{item.buyer}</td><td data-label="Quantity">{item.quantity}</td><td data-label="Total">{currency.format(item.lineTotal)}</td><td data-label="Detail"><a className="source-link" href={`#item-detail?id=${item.id}&from=grocery`}>Open</a></td></tr>)}</tbody></table>
       </section>
     </>
   );
@@ -1138,7 +1141,7 @@ function StaplesTrend({ data }) {
   return (
     <>
       <PageHead title="Staples Trend" subtitle="Frequency, seller spread, unit-price movement, and shrinkflation signals for repeat household staples." action={<a className="ghost link-btn" href="#grocery">Back to Grocery Intelligence</a>} />
-      <section className="card block"><table className="table"><thead><tr><th>Staple</th><th>Times bought</th><th>First unit</th><th>Latest unit</th><th>Unit change</th><th>Sellers</th><th>Status</th><th>Detail</th></tr></thead><tbody>{grouped.map((row) => <tr key={row[0]}>{row.slice(0, 7).map((cell, index) => <td data-label={["Staple", "Times bought", "First unit", "Latest unit", "Unit change", "Sellers", "Status"][index]} key={`${row[0]}-${index}`}>{cell}</td>)}<td data-label="Detail"><a className="source-link" href={`#item-detail?id=${row[7]}`}>Open</a></td></tr>)}</tbody></table></section>
+      <section className="card block"><table className="table"><thead><tr><th>Staple</th><th>Times bought</th><th>First unit</th><th>Latest unit</th><th>Unit change</th><th>Sellers</th><th>Status</th><th>Detail</th></tr></thead><tbody>{grouped.map((row) => <tr key={row[0]}>{row.slice(0, 7).map((cell, index) => <td data-label={["Staple", "Times bought", "First unit", "Latest unit", "Unit change", "Sellers", "Status"][index]} key={`${row[0]}-${index}`}>{cell}</td>)}<td data-label="Detail"><a className="source-link" href={`#item-detail?id=${row[7]}&from=staples-trend`}>Open</a></td></tr>)}</tbody></table></section>
     </>
   );
 }
@@ -1155,7 +1158,7 @@ function CornerPremium({ data }) {
   return (
     <>
       <PageHead title="Corner Shop Premium" subtitle="Emergency top-up items compared with supermarket records so the premium is visible." action={<a className="ghost link-btn" href="#grocery">Back to Grocery Intelligence</a>} />
-      <section className="card block"><table className="table"><thead><tr><th>Item</th><th>Corner seller</th><th>Corner unit</th><th>Comparable seller</th><th>Comparable unit</th><th>Premium</th><th>Meaning</th><th>Detail</th></tr></thead><tbody>{rows.map((row) => <tr key={row[0]}>{row.slice(0, 7).map((cell, index) => <td data-label={["Item", "Corner seller", "Corner unit", "Comparable seller", "Comparable unit", "Premium", "Meaning"][index]} key={`${row[0]}-${index}`}>{cell}</td>)}<td data-label="Detail"><a className="source-link" href={`#item-detail?id=${row[7]}`}>Open</a></td></tr>)}</tbody></table></section>
+      <section className="card block"><table className="table"><thead><tr><th>Item</th><th>Corner seller</th><th>Corner unit</th><th>Comparable seller</th><th>Comparable unit</th><th>Premium</th><th>Meaning</th><th>Detail</th></tr></thead><tbody>{rows.map((row) => <tr key={row[0]}>{row.slice(0, 7).map((cell, index) => <td data-label={["Item", "Corner seller", "Corner unit", "Comparable seller", "Comparable unit", "Premium", "Meaning"][index]} key={`${row[0]}-${index}`}>{cell}</td>)}<td data-label="Detail"><a className="source-link" href={`#item-detail?id=${row[7]}&from=corner-premium`}>Open</a></td></tr>)}</tbody></table></section>
     </>
   );
 }
@@ -1193,6 +1196,29 @@ function GenericModule({ route, data, refresh }) {
         {routeName === "sources" ? <TableCard title="Loaded Assumptions" rows={data.assumptions.values} heads={["Assumption", "Value", "Source basis"]} /> : <RecordsExplorer data={data} />}
         <section className="card"><h2>{routeName === "sources" ? "Source Notes" : "Trend"}</h2>{routeName === "sources" ? <SourceList sources={data.sources} /> : <Trend />}</section>
       </div>
+    </>
+  );
+}
+
+function GraphDetailPage({ data, route, go }) {
+  const id = routeParam(route, "id") || "dashboard-cash-on-hand";
+  const from = routeParam(route, "from") || "dashboard";
+  const detail = graphDetail(id, data);
+  return (
+    <>
+      <PageHead title={detail.title} subtitle={detail.subtitle} action={<button className="ghost" onClick={() => go(from)}>Back to {navLabel(from)}</button>} />
+      <section className="card block">
+        <div className="metric-title"><h2>Interactive bar graph</h2><InfoIcon text={detail.tooltip} /></div>
+        <BarMiniChart values={detail.values} alt={detail.alt} tall color={detail.color} labels={detail.labels} />
+      </section>
+      <div className="grid two block">
+        <section className="card"><h2>What is happening</h2><Insights items={detail.insights} /></section>
+        <section className="card"><h2>How to use this</h2><TableRows rows={detail.explanations} /></section>
+      </div>
+      <section className="card block">
+        <h2>Underlying values</h2>
+        <table className="table"><thead><tr><th>Period</th><th>Value</th><th>Interpretation</th></tr></thead><tbody>{detail.values.map((value, index) => <tr key={`${detail.labels[index] || index}-${value}`}><td data-label="Period">{detail.labels[index] || `Point ${index + 1}`}</td><td data-label="Value">{currency.format(value)}</td><td data-label="Interpretation">{value >= average(detail.values) ? "Above average for this series" : "Below average for this series"}</td></tr>)}</tbody></table>
+      </section>
     </>
   );
 }
@@ -1460,6 +1486,106 @@ function availableYears(data) {
   return years.length ? years : [2024, 2025, 2026];
 }
 
+function slug(value) {
+  return String(value).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function graphUrl(id, from) {
+  return `#graph-detail?id=${encodeURIComponent(id)}&from=${encodeURIComponent(from || currentRoute())}`;
+}
+
+function currentRoute() {
+  return typeof window === "undefined" ? "dashboard" : window.location.hash.replace("#", "") || "dashboard";
+}
+
+function currentBaseRoute() {
+  return baseRoute(currentRoute());
+}
+
+function routeFromGraphType(type) {
+  return ({ dashboard: "dashboard", cashflow: "cashflow", forecasting: "forecasting", alerts: "alerts" })[type] || currentBaseRoute();
+}
+
+function navLabel(route) {
+  const base = baseRoute(route);
+  return nav.find(([id]) => id === base)?.[2]?.toLowerCase() || base.replace(/-/g, " ");
+}
+
+function average(values) {
+  return values.reduce((sum, value) => sum + value, 0) / Math.max(values.length, 1);
+}
+
+function graphExplanation(title, type = "dashboard") {
+  return `${title} is drawn as a live bar graph from the current ${type} values. Taller bars show larger values. Click the graph for period-by-period values, interpretation, and the exact return path back to this workflow.`;
+}
+
+function graphDetail(id, data) {
+  const labels = months;
+  const groceryRows = (data.yearlySpend || []).filter((row) => row.category === "Groceries" && row.year === 2025).sort((a, b) => a.monthIndex - b.monthIndex);
+  const spendRows = (data.yearlySpend || []).filter((row) => row.category !== "Income" && row.year === 2025);
+  const monthlySpend = months.map((month, index) => spendRows.filter((row) => row.monthIndex === index + 1).reduce((sum, row) => sum + row.amount, 0));
+  if (id.includes("cash-flow") || id.includes("income-expense")) {
+    return {
+      title: "Cash inflows and outflows",
+      subtitle: "Monthly income bars compared with expense bars, using the current local dataset.",
+      tooltip: "Green bars are money in. Red comparison bars are money out. A widening gap means more available cashflow.",
+      values: series.income.map((value) => value * 1000),
+      alt: series.spend.map((value) => value * 1000),
+      color: "#17a972",
+      labels,
+      insights: ["Income is consistently above expenses in this model.", "Expense spikes align with school, grocery, pet, and transport months.", "Use budget controls when red bars narrow the gap."],
+      explanations: [["Live source", "Series comes from current app state and forecast controls where available."], ["Click path", "Back button returns to the page that opened this graph."], ["Action", "Use budget, income, and forecast controls to change the underlying data."]]
+    };
+  }
+  if (id.includes("forecast") || id.includes("runway") || id.includes("projected")) {
+    return {
+      title: "Forecast and runway bars",
+      subtitle: "Forward-looking monthly values, shown as bars so peaks and drops are easier to read.",
+      tooltip: "Bars show projected cash position. Secondary bars show optimistic scenario where available.",
+      values: series.forecast.map((value) => value * 1000),
+      alt: series.optimistic.map((value) => value * 1000),
+      color: "#7c5ce4",
+      labels,
+      insights: ["Base cash position weakens after seasonal expense pressure.", "Optimistic scenario stays higher when revenue and spending controls improve.", "Forecast values respond to editable inflation, tax, loan, mortgage, and utility assumptions."],
+      explanations: [["Controls", "Change forecast variables on the Forecasting page."], ["Risk", "Watch months where bars fall below the household buffer."], ["Return", "Back button returns to Forecasting if that was the source."]]
+    };
+  }
+  if (id.includes("bars") || id.includes("budget") || id.includes("category") || id.includes("coverage")) {
+    return {
+      title: "Category bar breakdown",
+      subtitle: "Category totals and operational coverage rendered as comparable bars.",
+      tooltip: "Each bar is a category contribution. Larger bars mean higher spend, usage, or coverage depending on the source page.",
+      values: monthlySpend.length ? monthlySpend : series.cash.map((value) => value * 1000),
+      color: "#1d72e8",
+      labels,
+      insights: ["Housing and groceries form the largest recurring pressure.", "School, clothing, pets, and transport create uneven months.", "Use monthly filters to inspect specific category movement."],
+      explanations: [["Granularity", "Receipt items feed category totals where line-item data exists."], ["Manipulation", "Budget changes update variance immediately."], ["Drill-down", "Use receipts and spending search for product-level evidence."]]
+    };
+  }
+  if (id.includes("grocery")) {
+    return {
+      title: "Grocery trend bars",
+      subtitle: "Monthly grocery spend for the household plan.",
+      tooltip: "Bars show monthly grocery pressure. Higher bars usually reflect teen lunches, supermarket stock-ups, and household staples.",
+      values: groceryRows.map((row) => row.amount),
+      color: "#17a972",
+      labels: groceryRows.map((row) => row.month),
+      insights: ["Grocery spend rises across the year in the model.", "Teen snacks, packed lunches, toiletries, and pet crossover items explain some spikes.", "Supermarket comparison and staples trend explain item-level movement."],
+      explanations: [["Family model", "Two adults, Oliver 17, Mia 15, and two dogs."], ["Source", "DEFRA/ONS grocery baseline plus generated receipt lines."], ["Action", "Open Grocery Intelligence for seller and staple views."]]
+    };
+  }
+  return {
+    title: "Household finance bar graph",
+    subtitle: "A live bar version of the selected dashboard graph.",
+    tooltip: "Bars replace decorative lines. Larger bars mean higher values, and detail rows explain the movement.",
+    values: series.cash.map((value) => value * 1000),
+    color: "#1d72e8",
+    labels,
+    insights: ["The graph now shows magnitude instead of abstract movement.", "Click-through keeps workflow context and returns to the source page.", "Values update when app state changes, such as income, budget, or forecast edits."],
+    explanations: [["Workflow", "Graph detail receives a from-route and returns to it."], ["Interpretation", "Above-average bars mark pressure or stronger performance."], ["Next step", "Use the source page controls to change data and watch bars update."]]
+  };
+}
+
 function TableRows({ rows }) {
   return <table className="table"><tbody>{rows.map(([a, b]) => <tr key={`${a}-${b}`}><td data-label="Name">{a}</td><td data-label="Value">{b}</td></tr>)}</tbody></table>;
 }
@@ -1481,41 +1607,61 @@ function moduleDescription(title) {
   return descriptions[title] || "Stored and read through the local IndexedDB repository with working internal links.";
 }
 
+function InfoIcon({ text }) {
+  return <span className="info-tip" tabIndex="0" aria-label={text}>ⓘ<span>{text}</span></span>;
+}
+
+function BarMiniChart({ values, alt = null, color = "#1d72e8", tall = false, compact = false, labels = [] }) {
+  const all = alt ? [...values, ...alt] : values;
+  const max = Math.max(...all, 1);
+  const height = tall ? 260 : compact ? 58 : 180;
+  const base = height - 28;
+  const barGap = compact ? 4 : 10;
+  const barWidth = Math.max(7, (680 - values.length * barGap) / Math.max(values.length, 1));
+  return (
+    <svg className={compact ? "spark bar-spark" : "chart bar-chart"} viewBox={`0 0 720 ${height}`} preserveAspectRatio="none">
+      {[0, 1, 2, 3].map((line) => <line key={line} x1="28" y1={28 + line * ((base - 18) / 3)} x2="700" y2={28 + line * ((base - 18) / 3)} stroke="#edf1f5" />)}
+      {values.map((value, index) => {
+        const x = 34 + index * (barWidth + barGap);
+        const barHeight = Math.max(4, (value / max) * (base - 24));
+        const altHeight = alt ? Math.max(4, ((alt[index] || 0) / max) * (base - 24)) : 0;
+        return <g key={`${index}-${value}`}><rect x={x} y={base - barHeight} width={barWidth} height={barHeight} rx="5" fill={color} opacity=".86" />{alt && <rect x={x + barWidth * .5} y={base - altHeight} width={Math.max(5, barWidth * .42)} height={altHeight} rx="4" fill="#17a972" opacity=".82" />} {!compact && <text x={x} y={height - 6} fontSize="11" fill="#667085" transform={`rotate(-35 ${x} ${height - 6})`}>{labels[index] || months[index % months.length] || index + 1}</text>}</g>;
+      })}
+    </svg>
+  );
+}
+
 function KpiGrid({ type }) {
-  return <div className="grid kpis">{(kpis[type] || kpis.dashboard).map(([title, value, delta, key, down]) => <section className="card" key={title}><div className="metric-title"><span>{title}</span><span>ⓘ</span></div><div className="metric-value">{value}</div><div className={`delta ${down ? "down" : ""}`}>{delta}</div><Spark values={series[key] || series.cash} color={down ? "#ef4c5f" : key === "forecast" ? "#7c5ce4" : "#1d72e8"} fill /></section>)}</div>;
+  return <div className="grid kpis">{(kpis[type] || kpis.dashboard).map(([title, value, delta, key, down]) => {
+    const graphId = `${type}-${slug(title)}`;
+    return <section className="card graph-card" key={title}><div className="metric-title"><span>{title}</span><InfoIcon text={graphExplanation(title, type)} /></div><div className="metric-value">{value}</div><div className={`delta ${down ? "down" : ""}`}>{delta}</div><Spark id={graphId} title={title} values={series[key] || series.cash} color={down ? "#ef4c5f" : key === "forecast" ? "#7c5ce4" : "#1d72e8"} from={routeFromGraphType(type)} /></section>;
+  })}</div>;
 }
 
-function Spark({ values, color = "#1d72e8", fill = false }) {
-  const max = Math.max(...values);
-  const min = Math.min(...values);
-  const points = values.map((value, index) => `${(index / (values.length - 1)) * 300},${42 - ((value - min) / Math.max(1, max - min)) * 34}`).join(" ");
-  return <svg className="spark" viewBox="0 0 300 50" preserveAspectRatio="none">{fill && <polyline points={`0,46 ${points} 300,46`} fill={`${color}18`} stroke="none" />}<polyline points={points} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+function Spark({ id = "spark", title = "Trend", values, color = "#1d72e8", from = currentBaseRoute() }) {
+  return <a className="graph-link" href={graphUrl(id, from)} aria-label={`Open ${title} graph detail`}><span className="graph-info"><InfoIcon text={graphExplanation(title, from)} /></span><BarMiniChart values={values} color={color} compact /></a>;
 }
 
-function Trend({ primary = series.cash, alt = null }) {
-  const all = alt ? [...primary, ...alt] : primary;
-  const max = Math.max(...all);
-  const min = Math.min(...all);
-  const line = (values, color, dash) => values.map((value, index) => `${55 + index * 48},${230 - ((value - min) / Math.max(1, max - min)) * 170}`).join(" ");
-  return <svg className="chart tall" viewBox="0 0 720 320">{[0, 1, 2, 3, 4].map((item) => <line key={item} x1="45" y1={45 + item * 50} x2="690" y2={45 + item * 50} stroke="#edf1f5" />)}<polyline points={line(primary)} fill="none" stroke="#1d72e8" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />{alt && <polyline points={line(alt)} fill="none" stroke="#17a972" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="5 7" />}<text x="48" y="285" fontSize="12" fill="#667085">Jan 23</text><text x="600" y="285" fontSize="12" fill="#667085">May 24</text></svg>;
+function Trend({ primary = series.cash, alt = null, id = "trend", from = currentBaseRoute() }) {
+  return <a className="graph-link" href={graphUrl(id, from)} aria-label="Open trend graph detail"><span className="graph-info"><InfoIcon text={graphExplanation("Trend", from)} /></span><BarMiniChart values={primary} alt={alt} color="#1d72e8" tall /></a>;
 }
 
-function BarsChart() {
+function BarsChart({ id = "income-expense-bars", from = currentBaseRoute() }) {
   const labels = ["Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May"];
-  return <svg className="chart" viewBox="0 0 720 280">{[0, 1, 2, 3, 4].map((item) => <line key={item} x1="45" y1={35 + item * 45} x2="700" y2={35 + item * 45} stroke="#edf1f5" />)}{labels.map((label, index) => { const x = 58 + index * 53; return <g key={label}><rect x={x} y={220 - series.income[index] * 2.1} width="13" height={series.income[index] * 2.1} rx="3" fill="#31b77c" opacity=".85" /><rect x={x + 18} y={220 - series.spend[index] * 2.1} width="13" height={series.spend[index] * 2.1} rx="3" fill="#ef4c5f" opacity=".78" /><text x={x} y="250" fontSize="11" fill="#667085" transform={`rotate(-35 ${x} 250)`}>{label}</text></g>; })}</svg>;
+  return <a className="graph-link" href={graphUrl(id, from)} aria-label="Open bar graph detail"><span className="graph-info"><InfoIcon text={graphExplanation("Income versus expenses", from)} /></span><svg className="chart" viewBox="0 0 720 280">{[0, 1, 2, 3, 4].map((item) => <line key={item} x1="45" y1={35 + item * 45} x2="700" y2={35 + item * 45} stroke="#edf1f5" />)}{labels.map((label, index) => { const x = 58 + index * 53; return <g key={label}><rect x={x} y={220 - series.income[index] * 2.1} width="16" height={series.income[index] * 2.1} rx="3" fill="#31b77c" opacity=".85" /><rect x={x + 22} y={220 - series.spend[index] * 2.1} width="16" height={series.spend[index] * 2.1} rx="3" fill="#ef4c5f" opacity=".78" /><text x={x} y="250" fontSize="11" fill="#667085" transform={`rotate(-35 ${x} 250)`}>{label}</text></g>; })}</svg></a>;
 }
 
-function MonthBars({ rows }) {
+function MonthBars({ rows, id = "month-bars", from = currentBaseRoute() }) {
   const max = Math.max(...rows.map(([, value]) => value), 1);
-  return <div className="month-bars">{rows.map(([month, value]) => <div className="month-bar" key={month}><span>{month}</span><div><i style={{ height: `${Math.max(8, (value / max) * 150)}px` }} /></div><strong>{currency.format(value)}</strong></div>)}</div>;
+  return <a className="graph-link" href={graphUrl(id, from)}><span className="graph-info"><InfoIcon text={graphExplanation("Monthly category trend", from)} /></span><div className="month-bars">{rows.map(([month, value]) => <div className="month-bar" key={month}><span>{month}</span><div><i style={{ height: `${Math.max(8, (value / max) * 150)}px` }} /></div><strong>{currency.format(value)}</strong></div>)}</div></a>;
 }
 
 function Insights({ items }) {
   return <div className="insight">{items.map((item, index) => <div className="insight-row" key={item}><div className={`icon-dot ${index === 1 ? "warn" : ""}`}>{index === 0 ? "✓" : index === 1 ? "!" : "↗"}</div><div><strong>{item}</strong><p>{index === 0 ? "Compared to last month, driven by better control and cleaner categorisation." : "Linked records and assumptions are available in the detail view."}</p></div></div>)}</div>;
 }
 
-function Bars({ rows }) {
-  return <div className="bars">{rows.map(([name, value]) => <div className="bar-row" key={name}><span>{name}</span><div className="bar-track"><div className="bar-fill" style={{ width: `${Math.min(Math.abs(value), 100)}%`, background: value < 0 ? "#ef4c5f" : "#17a972" }} /></div><strong>{value < 0 ? "-" : ""}{Math.abs(value)}%</strong></div>)}</div>;
+function Bars({ rows, id = "bars", from = currentBaseRoute() }) {
+  return <a className="graph-link" href={graphUrl(id, from)}><span className="graph-info"><InfoIcon text={graphExplanation("Breakdown", from)} /></span><div className="bars">{rows.map(([name, value]) => <div className="bar-row" key={name}><span>{name}</span><div className="bar-track"><div className="bar-fill" style={{ width: `${Math.min(Math.abs(value), 100)}%`, background: value < 0 ? "#ef4c5f" : "#17a972" }} /></div><strong>{value < 0 ? "-" : ""}{Math.abs(value)}%</strong></div>)}</div></a>;
 }
 
 function ActionList({ items }) {
