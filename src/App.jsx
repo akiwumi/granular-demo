@@ -459,7 +459,7 @@ function AIAssistant({ data, refresh, go }) {
   }, []);
   const compactContext = useMemo(() => ({
     categories: [...new Set((data.yearlySpend || []).map((row) => row.category))],
-    receiptItems: data.receiptItems.map(({ id, item, variant, seller, category, buyer, lineTotal, purchasedAt, tags }) => ({ id, item, variant, seller, category, buyer, lineTotal, purchasedAt, tags })),
+    receiptItems: data.receiptItems.map(({ id, transactionId, item, variant, seller, category, buyer, lineTotal, purchasedAt, tags }) => ({ id, transactionId, item, variant, seller, category, buyer, lineTotal, purchasedAt, tags })),
     transactions: data.transactions,
     yearlySpend: data.yearlySpend,
     assumptions: data.assumptions?.values || []
@@ -502,21 +502,41 @@ function AIAssistant({ data, refresh, go }) {
         <div className="hero-cta"><button className="primary" onClick={askAi}>Run AI action</button><button className="ghost" onClick={() => setInstruction("find all Tesco purchases")}>Example search</button><button className="ghost" onClick={() => setInstruction("set household monthly income to 6800")}>Example income edit</button><button className="ghost" onClick={() => setInstruction("set Groceries annual budget to 9500")}>Example budget edit</button></div>
         {status && <p><strong>{status}</strong></p>}
       </section>
-      {result && <section className="card block"><h2>{result.title}</h2>{result.rows?.length ? <table className="table"><tbody>{result.rows.map((row, index) => <tr key={index}>{row.map((cell, cellIndex) => <td key={cellIndex} data-label={cellIndex === 0 ? "Item" : "Value"}>{cell}</td>)}</tr>)}</tbody></table> : <p>{result.message}</p>}</section>}
+      {result && <section className="card block"><h2>{result.title}</h2>{result.message && <p>{result.message}</p>}{result.rows?.length ? <AiResultTable heads={result.heads} rows={result.rows} /> : !result.message && <p>No matching records found.</p>}</section>}
     </>
   );
 }
 
 async function applyAiAction(action, data, refresh, go, setResult) {
   if (action.action === "search_items") {
-    const rows = filterItemRows(data.receiptItems, action.query || "").map((item) => [item.item, item.seller, item.category, currency.format(item.lineTotal), item.id]);
-    setResult({ title: `Item results: ${action.query}`, rows, message: action.answer });
+    const rows = filterItemRows(data.receiptItems, action.query || "").map((item) => {
+      const tx = data.transactions.find((record) => record.id === item.transactionId);
+      const purchaseDate = item.purchasedAt || tx?.date || "Date missing";
+      return [
+        <><strong>{item.item}</strong><br /><small>{item.variant}</small></>,
+        item.seller,
+        item.category,
+        item.buyer,
+        purchaseDate,
+        currency.format(item.lineTotal),
+        <a className="source-link" href={`#receipt-detail?id=${item.transactionId}&from=ai`}>Open receipt</a>
+      ];
+    });
+    setResult({ title: `Item results: ${action.query}`, heads: ["Item", "Seller", "Category", "Buyer", "Purchase date", "Item total", "Receipt"], rows, message: action.answer });
     return;
   }
   if (action.action === "search_receipts") {
     const query = String(action.query || "").toLowerCase();
-    const rows = data.transactions.filter((tx) => [tx.merchant, tx.category, tx.owner, tx.context].join(" ").toLowerCase().includes(query)).map((tx) => [tx.merchant, tx.category, tx.owner, currency.format(tx.amount), tx.id]);
-    setResult({ title: `Receipt results: ${action.query}`, rows, message: action.answer });
+    const rows = data.transactions.filter((tx) => [tx.merchant, tx.category, tx.owner, tx.context, tx.date, ...dateSearchTokens(tx.date)].join(" ").toLowerCase().includes(query)).map((tx) => [
+      tx.merchant,
+      tx.category,
+      tx.owner,
+      tx.date,
+      currency.format(tx.amount),
+      tx.context,
+      <a className="source-link" href={`#receipt-detail?id=${tx.id}&from=ai`}>Open receipt</a>
+    ]);
+    setResult({ title: `Receipt results: ${action.query}`, heads: ["Merchant", "Category", "Owner", "Purchase date", "Total", "Context", "Receipt"], rows, message: action.answer });
     return;
   }
   if (action.action === "set_budget") {
@@ -545,6 +565,15 @@ async function applyAiAction(action, data, refresh, go, setResult) {
     return;
   }
   setResult({ title: "AI answer", message: action.answer || JSON.stringify(action) });
+}
+
+function AiResultTable({ heads = [], rows }) {
+  return (
+    <table className="table ai-result-table">
+      {heads.length > 0 && <thead><tr>{heads.map((head) => <th key={head}>{head}</th>)}</tr></thead>}
+      <tbody>{rows.map((row, index) => <tr key={index}>{row.map((cell, cellIndex) => <td key={`${index}-${cellIndex}`} data-label={heads[cellIndex] || (cellIndex === 0 ? "Item" : "Value")}>{cell}</td>)}</tr>)}</tbody>
+    </table>
+  );
 }
 
 function AnnualView({ data }) {
