@@ -841,10 +841,11 @@ function ReceiptDetailPage({ data, route, go }) {
             <p>Receipt no. {receiptNumber(receipt)} · Paid by household card</p>
           </div>
           <table className="table receipt-table">
-            <thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>VAT</th><th>Total</th></tr></thead>
+            <thead><tr><th>Item</th><th>Weight / Qty</th><th>Price by weight</th><th>Unit</th><th>VAT</th><th>Final cost</th></tr></thead>
             <tbody>{items.map((item) => {
               const rate = vatRateForItem(item);
-              return <tr key={item.id}><td data-label="Item"><button className="text-link" onClick={() => go(`item-detail?id=${item.id}&from=receipt-detail&receipt=${receipt.id}`)}><strong>{item.item}</strong><br /><small>{item.variant}</small></button></td><td data-label="Qty">{item.quantity}</td><td data-label="Unit">{currency.format(item.unitPrice)}</td><td data-label="VAT">{rate ? `${rate}% inc.` : "0%"}</td><td data-label="Total">{currency.format(item.lineTotal)}</td></tr>;
+              const measure = measureInfo(item);
+              return <tr key={item.id}><td data-label="Item"><button className="text-link" onClick={() => go(`item-detail?id=${item.id}&from=receipt-detail&receipt=${receipt.id}`)}><strong>{item.item}</strong><br /><small>{item.variant}</small></button></td><td data-label="Weight / Qty">{measure.display}</td><td data-label="Price by weight">{measure.unitLabel}</td><td data-label="Unit">{currency.format(item.unitPrice)}</td><td data-label="VAT">{rate ? `${rate}% inc.` : "0%"}</td><td data-label="Final cost">{currency.format(item.lineTotal)}</td></tr>;
             })}</tbody>
           </table>
           <div className="receipt-summary">
@@ -1523,6 +1524,31 @@ function vatRateForItem(item) {
   if (["Household", "Toiletries", "Clothing", "DIY", "Pets", "Car", "Activities"].includes(item.category)) return 20;
   if (item.category === "Charges" && /delivery|bag|carrier/i.test(`${item.item} ${item.variant}`)) return 20;
   return 0;
+}
+
+function measureInfo(item) {
+  const quantity = String(item.quantity || "").toLowerCase();
+  const gram = quantity.match(/([\d.]+)\s*g\b/);
+  const kg = quantity.match(/([\d.]+)\s*kg\b/);
+  const ml = quantity.match(/([\d.]+)\s*ml\b/);
+  const litre = quantity.match(/([\d.]+)\s*l(?:itre|itres)?\b/);
+  if (kg) {
+    const value = Number(kg[1]);
+    return { display: `${value}kg`, unitLabel: value ? `${currency.format(item.lineTotal / value)}/kg` : "-" };
+  }
+  if (gram) {
+    const kgValue = Number(gram[1]) / 1000;
+    return { display: `${Number(gram[1])}g`, unitLabel: kgValue ? `${currency.format(item.lineTotal / kgValue)}/kg` : "-" };
+  }
+  if (litre) {
+    const value = Number(litre[1]);
+    return { display: `${value}l`, unitLabel: value ? `${currency.format(item.lineTotal / value)}/litre` : "-" };
+  }
+  if (ml) {
+    const litreValue = Number(ml[1]) / 1000;
+    return { display: `${Number(ml[1])}ml`, unitLabel: litreValue ? `${currency.format(item.lineTotal / litreValue)}/litre` : "-" };
+  }
+  return { display: item.quantity, unitLabel: "Per item/pack" };
 }
 
 function receiptTotals(receipt, items) {
