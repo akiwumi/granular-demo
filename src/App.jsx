@@ -1522,7 +1522,14 @@ function shortValue(value) {
 }
 
 function graphExplanation(title, type = "dashboard") {
-  return `${title} is drawn as a live bar graph from the current ${type} values. Taller bars show larger values. Click the graph for period-by-period values, interpretation, and the exact return path back to this workflow.`;
+  const lower = `${title} ${type}`.toLowerCase();
+  if (lower.includes("cash") || lower.includes("income")) return "This shows money available to the household. Higher bars mean more cash or income in that period. Lower bars mean there is less room for bills, savings, and surprise costs.";
+  if (lower.includes("burn") || lower.includes("expense") || lower.includes("spend")) return "This shows money leaving the household. Higher bars mean heavier spending pressure. Check the receipts for high bars to see which bills or purchases caused the rise.";
+  if (lower.includes("runway") || lower.includes("forecast")) return "This estimates future breathing room. Falling bars mean the buffer is shrinking. Rising bars mean the household plan is becoming safer.";
+  if (lower.includes("invoice") || lower.includes("receivable")) return "This shows money expected but not yet received. Higher bars can be good, but only if that money arrives on time.";
+  if (lower.includes("coverage") || lower.includes("accounts")) return "This shows how complete the records are. Larger bars mean more of that data type is connected and available for analysis.";
+  if (lower.includes("grocery") || lower.includes("basket")) return "This shows grocery and staple pressure. Higher bars usually mean a bigger shop, more teen lunch items, toiletries, pet food, or emergency top-ups.";
+  return "Each bar compares one period or category with the others. Taller bars are bigger amounts. Use this to spot what is normal, what is unusually high, and where to investigate first.";
 }
 
 function graphDetail(id, data) {
@@ -1534,61 +1541,61 @@ function graphDetail(id, data) {
     return {
       title: "Cash inflows and outflows",
       subtitle: "Monthly income bars compared with expense bars, using the current local dataset.",
-      tooltip: "Green bars are money in. Red comparison bars are money out. A widening gap means more available cashflow.",
+      tooltip: "Green bars are money coming in. Red or amber bars are money going out. When green is much taller than spending, the month has breathing room. When spending gets close to income, the household is under pressure.",
       values: series.income.map((value) => value * 1000),
       alt: series.spend.map((value) => value * 1000),
       color: "#17a972",
       labels,
-      insights: ["Income is consistently above expenses in this model.", "Expense spikes align with school, grocery, pet, and transport months.", "Use budget controls when red bars narrow the gap."],
-      explanations: [["Live source", "Series comes from current app state and forecast controls where available."], ["Click path", "Back button returns to the page that opened this graph."], ["Action", "Use budget, income, and forecast controls to change the underlying data."]]
+      insights: ["Money coming in is usually higher than money going out, so the household is not running at a loss in most months.", "Expensive months line up with groceries, school costs, pets, transport, and household repairs.", "If the spending bar gets close to the income bar, reduce flexible spending or move money from a savings pot before the month ends."],
+      explanations: [["Green bars", "Income or cash received during the month."], ["Red or amber bars", "Spending, bills, or forecast pressure for the same month."], ["What to check", "Open receipts for months where the spending bar jumps. Look for supermarket, school, pet, car, or card-charge causes."]]
     };
   }
   if (id.includes("forecast") || id.includes("runway") || id.includes("projected")) {
     return {
       title: "Forecast and runway bars",
       subtitle: "Forward-looking monthly values, shown as bars so peaks and drops are easier to read.",
-      tooltip: "Bars show projected cash position. Secondary bars show optimistic scenario where available.",
+      tooltip: "This estimates future household breathing room. A shorter bar means less spare money after expected bills and spending. A taller bar means the plan is healthier.",
       values: series.forecast.map((value) => value * 1000),
       alt: series.optimistic.map((value) => value * 1000),
       color: "#7c5ce4",
       labels,
-      insights: ["Base cash position weakens after seasonal expense pressure.", "Optimistic scenario stays higher when revenue and spending controls improve.", "Forecast values respond to editable inflation, tax, loan, mortgage, and utility assumptions."],
-      explanations: [["Controls", "Change forecast variables on the Forecasting page."], ["Risk", "Watch months where bars fall below the household buffer."], ["Return", "Back button returns to Forecasting if that was the source."]]
+      insights: ["The forecast weakens when seasonal costs rise, especially school, clothing, energy, and food.", "The comparison bars show how much better the year looks if income improves or spending is tightened.", "Mortgage, loans, utilities, inflation, tax, and shrinkflation all affect how tall these bars are."],
+      explanations: [["Short bars", "Months where the household has less financial room."], ["Tall bars", "Months where income and savings cover expected spending more comfortably."], ["What to try", "Adjust inflation, mortgage, loan, utility, or income assumptions on the Forecasting page and compare the result."]]
     };
   }
   if (id.includes("bars") || id.includes("budget") || id.includes("category") || id.includes("coverage")) {
     return {
       title: "Category bar breakdown",
       subtitle: "Category totals and operational coverage rendered as comparable bars.",
-      tooltip: "Each bar is a category contribution. Larger bars mean higher spend, usage, or coverage depending on the source page.",
+      tooltip: "Each bar is one category or record type. A taller bar means that category is taking more money, or that more records exist for it.",
       values: monthlySpend.length ? monthlySpend : series.cash.map((value) => value * 1000),
       color: "#1d72e8",
       labels,
-      insights: ["Housing and groceries form the largest recurring pressure.", "School, clothing, pets, and transport create uneven months.", "Use monthly filters to inspect specific category movement."],
-      explanations: [["Granularity", "Receipt items feed category totals where line-item data exists."], ["Manipulation", "Budget changes update variance immediately."], ["Drill-down", "Use receipts and spending search for product-level evidence."]]
+      insights: ["Housing and groceries are the main recurring pressures.", "School, clothing, pets, car costs, and repairs make some months uneven.", "A category that keeps showing tall bars should have a monthly limit or a planned pot."],
+      explanations: [["Tall category", "This area is using a larger share of household money."], ["Short category", "This area is currently lighter or less frequent."], ["What to check", "Open the category in budgets, receipts, or spending search to see the exact purchases."]]
     };
   }
   if (id.includes("grocery")) {
     return {
       title: "Grocery trend bars",
       subtitle: "Monthly grocery spend for the household plan.",
-      tooltip: "Bars show monthly grocery pressure. Higher bars usually reflect teen lunches, supermarket stock-ups, and household staples.",
+      tooltip: "This shows how supermarket and staple spending changes by month. Taller bars mean a bigger food, toiletries, pet, or household-basics load.",
       values: groceryRows.map((row) => row.amount),
       color: "#17a972",
       labels: groceryRows.map((row) => row.month),
-      insights: ["Grocery spend rises across the year in the model.", "Teen snacks, packed lunches, toiletries, and pet crossover items explain some spikes.", "Supermarket comparison and staples trend explain item-level movement."],
-      explanations: [["Family model", "Two adults, Oliver 17, Mia 15, and two dogs."], ["Source", "DEFRA/ONS grocery baseline plus generated receipt lines."], ["Action", "Open Grocery Intelligence for seller and staple views."]]
+      insights: ["Grocery spending rises when the household does larger supermarket shops or buys more school-lunch items.", "Teen snacks, packed lunches, toiletries, dog food, and cleaning products explain many spikes.", "Corner-shop top-ups can make a small shop look expensive because the unit prices are higher."],
+      explanations: [["Normal shop", "Milk, bread, fruit, cereal, protein, pasta, rice, toiletries, cleaning basics, and pet items."], ["Spike", "A month where staples, teen food, toiletries, or emergency top-ups cost more than usual."], ["What to compare", "Use supermarket comparison and staples trend to see whether the issue is price, quantity, or seller choice."]]
     };
   }
   return {
-    title: "Household finance bar graph",
-    subtitle: "A live bar version of the selected dashboard graph.",
-    tooltip: "Bars replace decorative lines. Larger bars mean higher values, and detail rows explain the movement.",
+    title: "Household finance chart",
+    subtitle: "A simple view of how this household figure changes over time.",
+    tooltip: "Each bar is one period. Taller bars mean a higher amount. Look for unusually tall or short bars because they usually explain where money changed.",
     values: series.cash.map((value) => value * 1000),
     color: "#1d72e8",
     labels,
-    insights: ["The graph now shows magnitude instead of abstract movement.", "Click-through keeps workflow context and returns to the source page.", "Values update when app state changes, such as income, budget, or forecast edits."],
-    explanations: [["Workflow", "Graph detail receives a from-route and returns to it."], ["Interpretation", "Above-average bars mark pressure or stronger performance."], ["Next step", "Use the source page controls to change data and watch bars update."]]
+    insights: ["A taller bar means the amount is higher than nearby periods.", "A sudden jump usually means a larger bill, a stock-up shop, income timing, or a one-off household cost.", "A sudden drop can be good for spending, but risky if the chart is showing income or cash buffer."],
+    explanations: [["Tall bar", "A larger amount than usual. Check whether this is good income, planned saving, or unwanted spending."], ["Short bar", "A smaller amount than usual. This may be good for costs, but not for income or cash."], ["What to do", "Look at the month, then open receipts, budgets, or forecast assumptions to find the cause."]]
   };
 }
 
@@ -1610,7 +1617,7 @@ function moduleDescription(title) {
     "Credit card": "Card balance, interest assumptions, repayments, and charge alerts.",
     "Mia and Oliver": "Child-specific balances, allowance, top-ups, and parent-paid spending."
   };
-  return descriptions[title] || "Stored and read through the local IndexedDB repository with working internal links.";
+  return descriptions[title] || "Open the supporting records, assumptions, and household figures behind this area.";
 }
 
 function InfoIcon({ text }) {
