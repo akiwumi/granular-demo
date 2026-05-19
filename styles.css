@@ -368,6 +368,7 @@ button { cursor: pointer; }
     display: flex;
     grid-template-columns: none;
     gap: 12px;
+    align-items: flex-start;
     overflow-x: auto;
     overscroll-behavior-x: contain;
     scroll-snap-type: x mandatory;
@@ -393,10 +394,14 @@ button { cursor: pointer; }
     grid-template-columns: none;
   }
   .card {
+    height: auto;
+    align-self: flex-start;
+    max-height: min(68dvh, 620px);
+    overflow: auto;
     padding: 14px;
   }
   .graph-card {
-    min-height: 210px;
+    min-height: 0;
   }
   .metric-value {
     font-size: 24px;
@@ -407,7 +412,8 @@ button { cursor: pointer; }
   .card.block,
   .annual-matrix-card,
   .weekly-grocery-card {
-    max-height: none;
+    max-height: min(68dvh, 620px);
+    overflow: auto;
   }
   .table-scroll,
   .annual-table-wrap {
