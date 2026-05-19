@@ -165,6 +165,33 @@ button:disabled {
   width: 100%;
   overflow-x: auto;
 }
+.payment-table {
+  min-width: 980px;
+}
+.payment-table small {
+  display: block;
+  color: #667085;
+  margin-top: 3px;
+}
+.bank-card-settings {
+  display: grid;
+  gap: 16px;
+}
+.mini-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  background: #f8fbff;
+}
+.mini-card h3,
+.mini-card p {
+  margin: 0;
+}
+.mini-card strong {
+  display: block;
+  margin: 8px 0;
+  font-size: 28px;
+}
 .alert-table {
   min-width: 980px;
   table-layout: auto;

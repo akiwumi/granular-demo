@@ -1,5 +1,5 @@
 const DB_NAME = "granular_household_local";
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 const stores = [
   "users",
@@ -10,6 +10,7 @@ const stores = [
   "alerts",
   "reports",
   "integrations",
+  "payment_accounts",
   "source_notes",
   "yearly_spend",
   "onboarding",
@@ -343,10 +344,18 @@ export const seed = {
     { id: "rp-003", name: "Child Allowance Report", type: "Kids", generated: "2024-05-30 16:47", owner: "Sarah Hughes", format: "PDF", status: "Complete" }
   ],
   integrations: [
+    { id: "in-000", name: "Santander 123 Current Account", type: "Bank", status: "Connected", lastSync: "Just now" },
     { id: "in-001", name: "Tesco Clubcard", type: "Loyalty", status: "Connected", lastSync: "2 minutes ago" },
     { id: "in-002", name: "ONS CPIH", type: "Source", status: "Connected", lastSync: "2 minutes ago" },
     { id: "in-003", name: "Ofgem", type: "Source", status: "Connected", lastSync: "1 hour ago" },
     { id: "in-004", name: "Barclaycard", type: "Card", status: "Connected", lastSync: "12 minutes ago" }
+  ],
+  payment_accounts: [
+    { id: "pay-bank-001", kind: "Bank account", provider: "Santander", name: "123 Current Account", holder: "Sarah and Mark", last4: "1284", sortCode: "09-01-28", balance: 12850, status: "Connected", sync: "Open Banking", rewards: "Cashback on selected household bills", linkedTo: "Salary, mortgage, council tax, utilities" },
+    { id: "pay-card-001", kind: "Debit card", provider: "Santander", name: "Everyday debit", holder: "Sarah", last4: "4481", balance: 0, status: "Connected", sync: "Bank feed", rewards: "None", linkedTo: "Groceries, toiletries, household shops" },
+    { id: "pay-card-002", kind: "Credit card", provider: "Barclaycard", name: "Rewards Visa", holder: "Mark", last4: "9032", balance: -1840, status: "Connected", sync: "Card feed", rewards: "0.25% cashback", linkedTo: "Fuel, larger household purchases, travel deposits" },
+    { id: "pay-store-001", kind: "Store rewards", provider: "Tesco", name: "Clubcard", holder: "Sarah", last4: "7742", balance: 18.5, status: "Connected", sync: "Loyalty feed", rewards: "Clubcard prices and points", linkedTo: "Tesco receipts and grocery price comparisons" },
+    { id: "pay-store-002", kind: "Store rewards", provider: "Boots", name: "Advantage Card", holder: "Mia", last4: "2198", balance: 7.42, status: "Ready", sync: "Manual scan", rewards: "Points on toiletries and pharmacy", linkedTo: "Boots receipts, pharmacy, toiletries" }
   ],
   source_notes: [
     { id: "src-001", source: "Nomis Labour Market Profile: Liverpool", url: "https://www.nomisweb.co.uk/reports/lmp/lad/1778385135/report.aspx", note: "2025 resident median gross weekly pay: full-time male £767.30, female £674.10; used for the two adult salary assumptions." },
@@ -382,7 +391,10 @@ export async function ensureSeeded() {
     if (transactions.length < seed.transactions.length) await putMany("transactions", seed.transactions);
     const items = await getAll("receipt_items");
     if (items.length < seed.receipt_items.length) await putMany("receipt_items", seed.receipt_items);
+    const paymentAccounts = await getAll("payment_accounts");
+    if (paymentAccounts.length < seed.payment_accounts.length) await putMany("payment_accounts", seed.payment_accounts);
     await putMany("alerts", seed.alerts);
+    await putMany("integrations", seed.integrations);
     await putMany("source_notes", seed.source_notes);
     await putMany("household", seed.household);
     await putMany("settings", seed.settings);

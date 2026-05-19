@@ -115,6 +115,7 @@ const onboardingSteps = [
   "Welcome and privacy-first local data",
   "Household setup: Liverpool family, children, pets",
   "Adult income and permissions",
+  "Connect bank accounts, cards, and store rewards",
   "Children allowance and top-up rules",
   "Pets, car, bills, groceries, and savings goals",
   "Import generated Liverpool demo dataset",
@@ -203,7 +204,7 @@ export function App() {
   const [data, setData] = useState(null);
 
   async function refresh() {
-    const [users, session, household, transactions, receiptItems, alerts, reports, integrations, sources, yearlySpend, onboarding, assumptions, settings] = await Promise.all([
+    const [users, session, household, transactions, receiptItems, alerts, reports, integrations, paymentAccounts, sources, yearlySpend, onboarding, assumptions, settings] = await Promise.all([
       getAll("users"),
       getOne("session", "current"),
       getOne("household", "hughes"),
@@ -212,6 +213,7 @@ export function App() {
       getAll("alerts"),
       getAll("reports"),
       getAll("integrations"),
+      getAll("payment_accounts"),
       getAll("source_notes"),
       getAll("yearly_spend"),
       getOne("onboarding", "state"),
@@ -219,7 +221,7 @@ export function App() {
       getAll("settings")
     ]);
     const withFallback = yearlySpend.length ? yearlySpend : fallbackYearlySpend();
-    setData({ users, session, household, transactions, receiptItems, alerts, reports, integrations, sources, yearlySpend: applyIncomeOverride(withFallback, settings), onboarding, assumptions, settings });
+    setData({ users, session, household, transactions, receiptItems, alerts, reports, integrations, paymentAccounts, sources, yearlySpend: applyIncomeOverride(withFallback, settings), onboarding, assumptions, settings });
   }
 
   useEffect(() => {
@@ -341,6 +343,12 @@ function CreateAccount({ go, refresh }) {
 
 function Onboarding({ data, refresh, go }) {
   const step = data.onboarding?.step || 0;
+  const isPaymentStep = onboardingSteps[step]?.includes("bank accounts");
+  const connectedCount = (data.paymentAccounts || []).filter((item) => item.status === "Connected").length;
+  async function addDemoPaymentAccount(kind) {
+    await putOne("payment_accounts", newPaymentAccount(kind));
+    await refresh();
+  }
   async function next() {
     if (step >= onboardingSteps.length - 1) {
       await putOne("onboarding", { id: "state", step, complete: true });
@@ -368,11 +376,22 @@ function Onboarding({ data, refresh, go }) {
         <p>Step {step + 1} of {onboardingSteps.length}</p>
         <h1>{onboardingSteps[step]}</h1>
         <p>Demo defaults are editable later in Settings. Granular keeps the household record local and models receipt items, price history, child money, card charges, and savings pots.</p>
-        <div className="grid three">
-          <div className="card"><h3>Household</h3><p>{data.household.members.join(", ")}</p></div>
-          <div className="card"><h3>Monthly income</h3><p>Estimated from public UK/Liverpool earnings sources with net pay assumptions.</p></div>
-          <div className="card"><h3>Local DB</h3><p>{data.household.dataset.transactions.toLocaleString()} transactions and {data.household.dataset.receiptItems.toLocaleString()} receipt items target scope.</p></div>
-        </div>
+        {isPaymentStep ? (
+          <>
+            <div className="grid three">
+              <div className="card"><h3>Main bank account</h3><p>Connect the current account used for salary, mortgage, bills, and household cashflow.</p><button className="ghost wide" onClick={() => addDemoPaymentAccount("Bank account")}>Connect bank</button></div>
+              <div className="card"><h3>Cards</h3><p>Add debit and credit cards so transactions can be linked to receipts and card charges.</p><button className="ghost wide" onClick={() => addDemoPaymentAccount("Credit card")}>Add card</button></div>
+              <div className="card"><h3>Store rewards</h3><p>Add Tesco Clubcard, Boots Advantage, Nectar, and similar reward cards for price and points context.</p><button className="ghost wide" onClick={() => addDemoPaymentAccount("Store rewards")}>Add reward card</button></div>
+            </div>
+            <section className="card block"><h2>Connected during setup</h2><p>{connectedCount} account sources connected. You can add or remove these later in Settings under Bank & Cards.</p><PaymentAccountTable accounts={data.paymentAccounts || []} /></section>
+          </>
+        ) : (
+          <div className="grid three">
+            <div className="card"><h3>Household</h3><p>{data.household.members.join(", ")}</p></div>
+            <div className="card"><h3>Monthly income</h3><p>Estimated from public UK/Liverpool earnings sources with net pay assumptions.</p></div>
+            <div className="card"><h3>Local DB</h3><p>{data.household.dataset.transactions.toLocaleString()} transactions and {data.household.dataset.receiptItems.toLocaleString()} receipt items target scope.</p></div>
+          </div>
+        )}
         <div className="hero-cta"><button className="ghost" onClick={back}>Back</button><button className="primary" onClick={next}>{step === onboardingSteps.length - 1 ? "Finish" : "Next"}</button><button className="ghost" onClick={skip}>Skip safe steps</button></div>
       </section>
     </div>
@@ -1158,16 +1177,24 @@ function Integrations({ data }) {
   return (
     <>
       <PageHead title="Connections" subtitle="Connect and manage bank, card, loyalty, receipt, and public-data sources." />
-      <div className="grid module-list">{data.integrations.map((item) => <section className="card" key={item.id}><h3>{item.name}</h3><p>{item.type}<br />Last synced {item.lastSync}</p><span className="status">{item.status}</span><a className="ghost link-btn wide" href={item.type === "Source" ? "#sources" : "#appsettings"}>{item.type === "Source" ? "View source" : "Manage"}</a></section>)}</div>
+      <div className="grid module-list">{data.integrations.map((item) => <section className="card" key={item.id}><h3>{item.name}</h3><p>{item.type}<br />Last synced {item.lastSync}</p><span className="status">{item.status}</span><a className="ghost link-btn wide" href={item.type === "Source" ? "#sources" : "#settings?tab=bank-cards"}>{item.type === "Source" ? "View source" : "Manage"}</a></section>)}</div>
       <div className="grid three block"><TableCard title="Recent Updates" rows={data.integrations.map((item, index) => [item.name, 40 + index * 31, item.lastSync, "Success"])} heads={["Source", "Records", "Time", "Status"]} /><section className="card"><h2>Household Data Coverage</h2><Bars rows={[["Bank accounts", 72], ["Transactions", 95], ["Bills", 56], ["Receipts", 48], ["Item lines", 88]]} /></section><section className="card"><h2>Secure Local Access</h2><p>Demo access token is stored locally for this browser only.</p><input className="search" value="•••• •••• •••• 4d8f" readOnly /></section></div>
     </>
   );
 }
 
-function Settings({ user, refresh, go, data }) {
-  const [tab, setTab] = useState("Account");
+function Settings({ user, refresh, go, data, route }) {
+  const requestedTab = routeParam(route || "", "tab") === "bank-cards" ? "Bank & Cards" : "Account";
+  const [tab, setTab] = useState(requestedTab);
   const [avatarMode, setAvatarMode] = useState("photo");
   const recommendationsOn = aiRecommendationsEnabled(data.settings);
+  useEffect(() => {
+    setTab(requestedTab);
+  }, [requestedTab]);
+  async function addPaymentAccount(kind) {
+    await putOne("payment_accounts", newPaymentAccount(kind));
+    await refresh();
+  }
   async function replay() {
     await putOne("onboarding", { id: "state", step: 0, complete: false });
     await refresh();
@@ -1181,7 +1208,7 @@ function Settings({ user, refresh, go, data }) {
     <>
       <PageHead title="Account Settings" subtitle="Separate profile settings for mother and father." />
       <div className="card settings-layout">
-        <aside className="settings-menu"><div className="nav-list">{["Account", "AI", "Notifications", "Privacy", "Permissions", "Accessibility", "Onboarding"].map((item) => <button className={`nav-item settings-tab ${tab === item ? "active" : ""}`} onClick={() => setTab(item)} key={item}>{item}</button>)}</div></aside>
+        <aside className="settings-menu"><div className="nav-list">{["Account", "Bank & Cards", "AI", "Notifications", "Privacy", "Permissions", "Accessibility", "Onboarding"].map((item) => <button className={`nav-item settings-tab ${tab === item ? "active" : ""}`} onClick={() => setTab(item)} key={item}>{item}</button>)}</div></aside>
         <section>
           <h2>{tab}</h2>
           {tab === "Account" && <>
@@ -1189,6 +1216,7 @@ function Settings({ user, refresh, go, data }) {
             <div className="field-grid block"><label className="field">First Name<input value={user.name.split(" ")[0]} readOnly /></label><label className="field">Last Name<input value={user.name.split(" ")[1]} readOnly /></label><label className="field">Email<input value={user.email} readOnly /></label><label className="field">Preferred dashboard<select defaultValue="Household" onChange={(event) => go(event.target.value === "Groceries" ? "grocery" : event.target.value === "Kids" ? "kids" : event.target.value === "Personal" ? "finance" : "dashboard")}><option>Household</option><option>Personal</option><option>Kids</option><option>Groceries</option></select></label></div>
           </>}
           {tab === "Notifications" && ["Bill reminders", "Overspend alerts", "Shrinkflation alerts", "Child allowance reminders", "Card charge warnings", "Holiday savings reminders"].map((item) => <div className="insight-row setting-switch" key={item}><strong>{item}</strong><span className="switch" /></div>)}
+          {tab === "Bank & Cards" && <BankCardsSettings accounts={data.paymentAccounts || []} onAdd={addPaymentAccount} />}
           {tab === "AI" && <><div className="insight-row setting-switch"><div><strong>AI recommendations</strong><p>Turns behaviour-pattern recommendations on or off across Spending Trends and AI summaries.</p></div><button className={recommendationsOn ? "primary" : "ghost"} onClick={toggleAiRecommendations}>{recommendationsOn ? "On" : "Off"}</button></div><TableRows rows={[["AI proxy", "http://127.0.0.1:8787/api/ai"], ["Start command", "npm run dev"], ["Data sent", "Local app context for the current request only"]]} /></>}
           {tab === "Privacy" && <TableRows rows={[["Personal spending", "Hidden from shared reports by default"], ["Shared/family labels", "Shown in household dashboards"], ["Local data", "Stored in IndexedDB only"]]} />}
           {tab === "Permissions" && <TableRows rows={user.permissions.map((permission) => [permission, "Enabled"])} />}
@@ -1941,6 +1969,65 @@ function householdMonthlySeries(data, year = 2025) {
 
 function TableRows({ rows }) {
   return <table className="table"><tbody>{rows.map(([a, b]) => <tr key={`${a}-${b}`}><td data-label="Name">{a}</td><td data-label="Value">{b}</td></tr>)}</tbody></table>;
+}
+
+function BankCardsSettings({ accounts, onAdd }) {
+  const bankCount = accounts.filter((item) => item.kind === "Bank account").length;
+  const cardCount = accounts.filter((item) => item.kind?.includes("card")).length;
+  const rewardCount = accounts.filter((item) => item.kind === "Store rewards").length;
+  return (
+    <div className="bank-card-settings">
+      <div className="grid three">
+        <section className="mini-card"><h3>Bank accounts</h3><strong>{bankCount}</strong><p>Used for salary, mortgage, bills, and household cashflow.</p></section>
+        <section className="mini-card"><h3>Payment cards</h3><strong>{cardCount}</strong><p>Debit and credit cards mapped to purchases and charges.</p></section>
+        <section className="mini-card"><h3>Store rewards</h3><strong>{rewardCount}</strong><p>Loyalty cards add reward points, discounts, and seller context.</p></section>
+      </div>
+      <div className="hero-cta">
+        <button className="primary" onClick={() => onAdd("Bank account")}>Connect bank account</button>
+        <button className="ghost" onClick={() => onAdd("Debit card")}>Add debit card</button>
+        <button className="ghost" onClick={() => onAdd("Credit card")}>Add credit card</button>
+        <button className="ghost" onClick={() => onAdd("Store rewards")}>Add store rewards</button>
+      </div>
+      <PaymentAccountTable accounts={accounts} />
+      <TableRows rows={[
+        ["Integrated in app", "Feeds Money In & Out, receipts, alerts, card charges, rewards, and AI search context."],
+        ["Security model", "Local demo connection stored in IndexedDB; no real bank credentials are sent."],
+        ["Onboarding", "Only appears during setup until onboarding is completed. Replay onboarding is manual from this settings page."]
+      ]} />
+    </div>
+  );
+}
+
+function PaymentAccountTable({ accounts }) {
+  return (
+    <div className="table-scroll">
+      <table className="table payment-table">
+        <thead><tr><th>Type</th><th>Provider</th><th>Name</th><th>Holder</th><th>Details</th><th>Status</th><th>Feeds</th></tr></thead>
+        <tbody>{accounts.map((item) => (
+          <tr key={item.id}>
+            <td data-label="Type">{item.kind}</td>
+            <td data-label="Provider">{item.provider}</td>
+            <td data-label="Name"><strong>{item.name}</strong><br /><small>{item.rewards}</small></td>
+            <td data-label="Holder">{item.holder}</td>
+            <td data-label="Details">{item.sortCode ? `Sort ${item.sortCode} · ` : ""}•••• {item.last4}</td>
+            <td data-label="Status">{statusCell(item.status)}</td>
+            <td data-label="Feeds">{item.linkedTo}</td>
+          </tr>
+        ))}</tbody>
+      </table>
+    </div>
+  );
+}
+
+function newPaymentAccount(kind) {
+  const now = Date.now();
+  const templates = {
+    "Bank account": { provider: "Monzo", name: "Household current account", holder: "Sarah and Mark", last4: "2048", sortCode: "04-00-04", balance: 6200, sync: "Open Banking", rewards: "Round-ups and bill pot tracking", linkedTo: "Income, bills, transfers, savings pots" },
+    "Debit card": { provider: "Lloyds", name: "Everyday debit card", holder: "Sarah", last4: "5512", balance: 0, sync: "Bank feed", rewards: "None", linkedTo: "Daily shopping and cash withdrawals" },
+    "Credit card": { provider: "Barclaycard", name: "Household credit card", holder: "Mark", last4: "7741", balance: -650, sync: "Card feed", rewards: "Cashback and charge warnings", linkedTo: "Fuel, online purchases, larger household items" },
+    "Store rewards": { provider: "Sainsbury's", name: "Nectar card", holder: "Sarah", last4: "1188", balance: 12.8, sync: "Loyalty feed", rewards: "Nectar prices and points", linkedTo: "Groceries, toiletries, seller comparisons" }
+  };
+  return { id: `pay-${now}`, kind, status: "Connected", ...templates[kind] };
 }
 
 function SourceList({ sources }) {
