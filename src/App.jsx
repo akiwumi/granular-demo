@@ -1515,6 +1515,12 @@ function average(values) {
   return values.reduce((sum, value) => sum + value, 0) / Math.max(values.length, 1);
 }
 
+function shortValue(value) {
+  const absolute = Math.abs(Number(value) || 0);
+  if (absolute >= 1000) return `£${(absolute / 1000).toFixed(absolute >= 10000 ? 0 : 1)}k`;
+  return `£${Math.round(absolute)}`;
+}
+
 function graphExplanation(title, type = "dashboard") {
   return `${title} is drawn as a live bar graph from the current ${type} values. Taller bars show larger values. Click the graph for period-by-period values, interpretation, and the exact return path back to this workflow.`;
 }
@@ -1625,7 +1631,9 @@ function BarMiniChart({ values, alt = null, color = "#1d72e8", tall = false, com
         const x = 34 + index * (barWidth + barGap);
         const barHeight = Math.max(4, (value / max) * (base - 24));
         const altHeight = alt ? Math.max(4, ((alt[index] || 0) / max) * (base - 24)) : 0;
-        return <g key={`${index}-${value}`}><rect x={x} y={base - barHeight} width={barWidth} height={barHeight} rx="5" fill={color} opacity=".86" />{alt && <rect x={x + barWidth * .5} y={base - altHeight} width={Math.max(5, barWidth * .42)} height={altHeight} rx="4" fill="#17a972" opacity=".82" />} {!compact && <text x={x} y={height - 6} fontSize="11" fill="#667085" transform={`rotate(-35 ${x} ${height - 6})`}>{labels[index] || months[index % months.length] || index + 1}</text>}</g>;
+        const showCompactLabel = compact && (index === 0 || index === values.length - 1 || value === max);
+        const label = compact ? shortValue(value) : currency.format(value);
+        return <g key={`${index}-${value}`}><rect x={x} y={base - barHeight} width={barWidth} height={barHeight} rx="5" fill={color} opacity=".86" />{alt && <rect x={x + barWidth * .5} y={base - altHeight} width={Math.max(5, barWidth * .42)} height={altHeight} rx="4" fill="#17a972" opacity=".82" />}{(showCompactLabel || !compact) && <text className="bar-value-label" x={x + barWidth / 2} y={Math.max(14, base - barHeight - 6)} textAnchor="middle" fontSize={compact ? "12" : "11"} fill="#111827">{label}</text>} {!compact && <text x={x} y={height - 6} fontSize="11" fill="#667085" transform={`rotate(-35 ${x} ${height - 6})`}>{labels[index] || months[index % months.length] || index + 1}</text>}</g>;
       })}
     </svg>
   );
@@ -1648,7 +1656,7 @@ function Trend({ primary = series.cash, alt = null, id = "trend", from = current
 
 function BarsChart({ id = "income-expense-bars", from = currentBaseRoute() }) {
   const labels = ["Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May"];
-  return <a className="graph-link" href={graphUrl(id, from)} aria-label="Open bar graph detail"><span className="graph-info"><InfoIcon text={graphExplanation("Income versus expenses", from)} /></span><svg className="chart" viewBox="0 0 720 280">{[0, 1, 2, 3, 4].map((item) => <line key={item} x1="45" y1={35 + item * 45} x2="700" y2={35 + item * 45} stroke="#edf1f5" />)}{labels.map((label, index) => { const x = 58 + index * 53; return <g key={label}><rect x={x} y={220 - series.income[index] * 2.1} width="16" height={series.income[index] * 2.1} rx="3" fill="#31b77c" opacity=".85" /><rect x={x + 22} y={220 - series.spend[index] * 2.1} width="16" height={series.spend[index] * 2.1} rx="3" fill="#ef4c5f" opacity=".78" /><text x={x} y="250" fontSize="11" fill="#667085" transform={`rotate(-35 ${x} 250)`}>{label}</text></g>; })}</svg></a>;
+  return <a className="graph-link" href={graphUrl(id, from)} aria-label="Open bar graph detail"><span className="graph-info"><InfoIcon text={graphExplanation("Income versus expenses", from)} /></span><svg className="chart" viewBox="0 0 720 292">{[0, 1, 2, 3, 4].map((item) => <line key={item} x1="45" y1={35 + item * 45} x2="700" y2={35 + item * 45} stroke="#edf1f5" />)}{labels.map((label, index) => { const x = 58 + index * 53; const incomeHeight = series.income[index] * 2.1; const spendHeight = series.spend[index] * 2.1; return <g key={label}><rect x={x} y={220 - incomeHeight} width="16" height={incomeHeight} rx="3" fill="#31b77c" opacity=".85" /><rect x={x + 22} y={220 - spendHeight} width="16" height={spendHeight} rx="3" fill="#ef4c5f" opacity=".78" /><text className="bar-value-label" x={x + 8} y={Math.max(16, 214 - incomeHeight)} textAnchor="middle" fontSize="10" fill="#111827">{shortValue(series.income[index] * 1000)}</text><text className="bar-value-label" x={x + 30} y={Math.max(30, 214 - spendHeight)} textAnchor="middle" fontSize="10" fill="#111827">{shortValue(series.spend[index] * 1000)}</text><text x={x} y="268" fontSize="11" fill="#667085" transform={`rotate(-35 ${x} 268)`}>{label}</text></g>; })}</svg></a>;
 }
 
 function MonthBars({ rows, id = "month-bars", from = currentBaseRoute() }) {

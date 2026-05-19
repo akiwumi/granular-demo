@@ -38,6 +38,14 @@ button:disabled {
 .bar-chart rect {
   transition: height .16s ease, y .16s ease, opacity .16s ease;
 }
+.bar-value-label {
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  font-weight: 900;
+  pointer-events: none;
+}
 .graph-link:hover rect {
   opacity: 1;
 }
