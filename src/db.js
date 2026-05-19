@@ -368,6 +368,12 @@ export const seed = {
     { id: "src-008", source: "Rightmove current UK mortgage rates", url: "https://www.rightmove.co.uk/news/articles/property-news/current-uk-mortgage-rates/", note: "Updated 16 May 2026: average 5-year fixed mortgage rate 5.16%; used for the household repayment model." }
   ],
   settings: [
+    { id: "notification-bill-reminders", enabled: true, source: "Notification settings" },
+    { id: "notification-overspend-alerts", enabled: true, source: "Notification settings" },
+    { id: "notification-shrinkflation-alerts", enabled: true, source: "Notification settings" },
+    { id: "notification-child-allowance-reminders", enabled: true, source: "Notification settings" },
+    { id: "notification-card-charge-warnings", enabled: true, source: "Notification settings" },
+    { id: "notification-holiday-savings-reminders", enabled: true, source: "Notification settings" },
     { id: "assumptions", name: "Source-backed assumptions", values: [
       ["Housing", "Mortgage, £4,100/month", "£750,000 home, 30-year repayment mortgage, owned for 12 years"],
       ["Mortgage balance", "£576,058 estimated", "18 years remaining, calculated at 5.16%"],
@@ -398,7 +404,9 @@ export async function ensureSeeded() {
     await putMany("integrations", seed.integrations);
     await putMany("source_notes", seed.source_notes);
     await putMany("household", seed.household);
-    await putMany("settings", seed.settings);
+    const existingSettings = await getAll("settings");
+    const existingSettingIds = new Set(existingSettings.map((item) => item.id));
+    await putMany("settings", seed.settings.filter((item) => item.id === "assumptions" || !existingSettingIds.has(item.id)));
     const yearly = await getAll("yearly_spend");
     if (yearly.length < seed.yearly_spend.length || !yearly.some((row) => row.year === 2026)) await putMany("yearly_spend", seed.yearly_spend);
     else await putMany("yearly_spend", seed.yearly_spend);

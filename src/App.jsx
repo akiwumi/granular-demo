@@ -122,6 +122,15 @@ const onboardingSteps = [
   "Review assumptions and start dashboard"
 ];
 
+const notificationDefinitions = [
+  { id: "bill-reminders", label: "Bill reminders", detail: "Shows upcoming mortgage, council tax, utilities, school, and subscription reminders.", route: "dashboard" },
+  { id: "overspend-alerts", label: "Overspend alerts", detail: "Shows receipt-linked spending jumps in Expense Alerts and budget pressure prompts.", route: "alerts" },
+  { id: "shrinkflation-alerts", label: "Shrinkflation alerts", detail: "Shows pack-size and unit-price warnings on item detail and grocery intelligence pages.", route: "shrinkflation" },
+  { id: "child-allowance-reminders", label: "Child allowance reminders", detail: "Shows Mia and Oliver top-up warnings, school spend reminders, and child-money prompts.", route: "kids" },
+  { id: "card-charge-warnings", label: "Card charge warnings", detail: "Shows card interest, avoidable bank-charge warnings, and repayment actions.", route: "charges" },
+  { id: "holiday-savings-reminders", label: "Holiday savings reminders", detail: "Shows Spain/Greece savings prompts and holiday-pot recommendations.", route: "holidays" }
+];
+
 const moduleCopy = {
   spending: ["Spending Explorer", "Search by date, time, store, country, product, member, dog, payment method, amount, or receipt text.", ["Searchable purchase record", "Recent transactions", "Smart filters"]],
   receipts: ["Receipts", "Open purchases into receipt-level detail with itemised baskets and price movement.", ["Receipt detail", "Itemized basket", "OCR confidence"]],
@@ -455,14 +464,25 @@ function Screen(props) {
 function Dashboard({ data }) {
   const years = availableYears(data);
   const [selectedYear, setSelectedYear] = useState(years.includes(2026) ? 2026 : years.at(-1));
+  const billsOn = notificationEnabled(data.settings, "bill-reminders");
+  const overspendOn = notificationEnabled(data.settings, "overspend-alerts");
+  const cardOn = notificationEnabled(data.settings, "card-charge-warnings");
+  const holidayOn = notificationEnabled(data.settings, "holiday-savings-reminders");
+  const dashboardInsights = [
+    "The current mortgage assumption makes spending higher than income.",
+    overspendOn ? "Groceries, subscriptions, and discretionary spending need attention." : null,
+    cardOn ? "Card charges are being monitored for avoidable interest." : null,
+    holidayOn ? "Holiday savings reminders are active for the Spain/Greece pot." : null
+  ].filter(Boolean);
+  const billRows = billsOn ? [["Council tax", "Jun 1", "£186"], ["British Gas", "Jun 5", "£214"], ["Mersey Water", "Jun 8", "£46"], ["School lunch", "Jun 10", "£62"]] : [["Bill reminders", "Off", "Enable in Settings"]];
   return (
     <>
       <PageHead title="Household Dashboard" subtitle="A quick view of family income, bills, shopping, savings buffer, and alerts." action={<a className="primary link-btn" href="#receipts">+ Add receipt</a>} />
       <KpiGrid type="dashboard" />
-      <div className="grid two block"><section className="card"><h2>Savings buffer trend</h2><strong>£12,850</strong> <span className="delta down">Falling because the mortgage lifts fixed costs</span><Trend /></section><section className="card"><h2>AI Insight Summary <span className="status warn">Pressure</span></h2><Insights items={["The current mortgage assumption makes spending higher than income.", "The savings buffer falls through the year unless income or spending changes.", "Groceries, card charges, subscriptions, and discretionary spending need attention."]} /></section></div>
+      <div className="grid two block"><section className="card"><h2>Savings buffer trend</h2><strong>£12,850</strong> <span className="delta down">Falling because the mortgage lifts fixed costs</span><Trend /></section><section className="card"><h2>AI Insight Summary <span className="status warn">Pressure</span></h2><Insights items={dashboardInsights} /></section></div>
       <section className="card block"><div className="toolbar-inline"><label className="field">Annual overview year<select value={selectedYear} onChange={(event) => setSelectedYear(Number(event.target.value))}>{years.map((year) => <option key={year}>{year}</option>)}</select></label><a className="ghost link-btn" href="#annual">Open full Annual View</a></div></section>
       <AnnualOverview data={data} year={selectedYear} />
-      <div className="grid three block"><TransactionTable title="Recent Transactions" rows={data.transactions} from="dashboard" /><TableCard title="Upcoming Bills" rows={[["Council tax", "Jun 1", "£186"], ["British Gas", "Jun 5", "£214"], ["Mersey Water", "Jun 8", "£46"], ["School lunch", "Jun 10", "£62"]]} heads={["Bill", "Due", "Amount"]} /><section className="card"><h2>Money expected</h2><Bars rows={[["Salary", 94], ["Child benefit", 28], ["Refunds", 18], ["Interest", 8]]} /></section></div>
+      <div className="grid three block"><TransactionTable title="Recent Transactions" rows={data.transactions} from="dashboard" /><TableCard title="Upcoming Bills" rows={billRows} heads={["Bill", "Due", "Amount"]} /><section className="card"><h2>Money expected</h2><Bars rows={[["Salary", 94], ["Child benefit", 28], ["Refunds", 18], ["Interest", 8]]} /></section></div>
     </>
   );
 }
@@ -762,6 +782,11 @@ function Finance({ data, refresh }) {
   const modules = [["Net income", "£5,940"], ["Fixed costs", "£2,814"], ["Variable costs", "£2,356"], ["Debt", "£4,820"], ["Savings pots", "£7,440"], ["Cash buffer", "3.1 mo"], ["Holiday target", "68%"], ["Card interest", "£46"]];
   const currentMonthlyIncome = data.yearlySpend.find((row) => row.category === "Income")?.amount || 0;
   const [incomeDraft, setIncomeDraft] = useState(currentMonthlyIncome);
+  const attentionItems = [
+    notificationEnabled(data.settings, "overspend-alerts") ? "Cap work lunches at £45 per week." : null,
+    notificationEnabled(data.settings, "card-charge-warnings") ? "Increase credit-card repayment by £120." : null,
+    notificationEnabled(data.settings, "holiday-savings-reminders") ? "Move £250 from grocery underspend to Spain pot." : null
+  ].filter(Boolean);
   async function saveIncome() {
     await putOne("settings", { id: "income-monthly-override", amount: Number(incomeDraft), source: "Manual finance control" });
     await refresh();
@@ -779,7 +804,7 @@ function Finance({ data, refresh }) {
         <p>Changing income rewrites the income rows used by monthly surplus, annual surplus, budget planning, reports, and AI context.</p>
       </section>
       <div className="grid module-list">{modules.map(([title, value]) => <section className="card module-card graph-card" key={title}><div className="metric-title"><span>{title}</span></div><div className="metric-value">{value}</div><Spark id={`finance-${slug(title)}`} title={title} values={series.cash.slice(0, 8)} color="#109c92" from="finance" /></section>)}</div>
-      <div className="grid two block"><section className="card"><h2>Budget pressure by category</h2><Bars rows={[["Groceries", 82], ["Bills", 71], ["Kids", 64], ["Pets", 58], ["Transport", 77], ["Subscriptions", 91]]} /></section><section className="card"><h2>This month needs attention</h2><Insights items={["Cap work lunches at £45 per week.", "Increase credit-card repayment by £120.", "Move £250 from grocery underspend to Spain pot."]} /></section></div>
+      <div className="grid two block"><section className="card"><h2>Budget pressure by category</h2><Bars rows={[["Groceries", 82], ["Bills", 71], ["Kids", 64], ["Pets", 58], ["Transport", 77], ["Subscriptions", 91]]} /></section><section className="card"><h2>This month needs attention</h2>{attentionItems.length ? <Insights items={attentionItems} /> : <p>Budget notifications are off. Turn them on in Settings to show prompts here.</p>}</section></div>
       <div className="block"><TableCard title="Source-backed household assumptions" rows={data.assumptions.values} heads={["Assumption", "Value", "Source basis"]} /></div>
     </>
   );
@@ -912,7 +937,7 @@ function ReceiptItems({ data, go }) {
   );
 }
 
-function ItemDetail({ item, go }) {
+function ItemDetail({ item, go, settings = [] }) {
   if (!item) return <section className="card"><h2>No item selected</h2></section>;
   return (
     <section className="card item-detail">
@@ -927,7 +952,7 @@ function ItemDetail({ item, go }) {
         <div><small>Receipt link</small><strong>{item.transactionId}</strong></div>
       </div>
       <h3>Why this matters</h3>
-      <Insights items={[`You bought ${item.item} from ${item.seller}.`, `This item is tagged: ${(item.tags || []).join(", ")}.`, item.shrinkflation ? "Shrinkflation watch is active for this product." : "No shrinkflation flag on this item."]} />
+      <Insights items={[`You bought ${item.item} from ${item.seller}.`, `This item is tagged: ${(item.tags || []).join(", ")}.`, item.shrinkflation && notificationEnabled(settings, "shrinkflation-alerts") ? "Shrinkflation watch is active for this product." : "No active shrinkflation notification for this item."]} />
       <button className="secondary wide" onClick={() => go(`receipt-detail?id=${item.transactionId}`)}>Open linked receipt and seller history</button>
       <p><small>{item.productUrl}</small></p>
     </section>
@@ -1057,7 +1082,7 @@ function ItemDetailPage({ data, route, go }) {
     <>
       <PageHead title={item.item} subtitle={`${item.variant} · bought from ${item.seller}`} action={<button className="ghost" onClick={() => go(backTarget)}>Back to {navLabel(from)}</button>} />
       <div className="grid two">
-        <ItemDetail item={item} go={go} />
+        <ItemDetail item={item} go={go} settings={data.settings} />
         <section className="card"><h2>Seller history</h2><TableRows rows={sellerItems.map((record) => [record.item, `${record.purchasedAt} · ${currency.format(record.lineTotal)}`])} /></section>
       </div>
       <section className="card block">
@@ -1069,17 +1094,24 @@ function ItemDetailPage({ data, route, go }) {
   );
 }
 
-function Cashflow() {
+function Cashflow({ data }) {
+  const insightItems = [
+    "The £4,100 mortgage is the main fixed-cost pressure.",
+    notificationEnabled(data.settings, "overspend-alerts") ? "Watch groceries, utilities, teen costs, and pets." : null,
+    notificationEnabled(data.settings, "card-charge-warnings") ? "Card-charge warnings are active for avoidable interest." : null
+  ].filter(Boolean);
+  const actions = [
+    { label: "Review mortgage affordability", href: "#forecasting", detail: "Open the editable mortgage rate, term, and forecast table" },
+    { label: "Test a higher-income scenario", href: "#finance", detail: "Open household income controls and apply a new monthly income" },
+    notificationEnabled(data.settings, "overspend-alerts") ? { label: "Cut flexible spending by £650/month", href: "#budgets?focus=flexible&category=Eating%20out", detail: "Open budgets with a flexible-spending reduction plan" } : null,
+    notificationEnabled(data.settings, "card-charge-warnings") ? { label: "Review card charges", href: "#alerts", detail: "Open receipt-linked card charge warnings" } : null
+  ].filter(Boolean);
   return (
     <>
       <PageHead title="Money In & Out" subtitle="See household income, bills, groceries, family spending, and what is left each month." />
       <KpiGrid type="cashflow" linked={false} />
       <div className="grid two block"><section className="card"><h2>Income and spending</h2><BarsChart /></section><section className="card"><h2>Monthly household breakdown</h2><Bars rows={[["Opening buffer", 78], ["Salary income", 60], ["Mortgage", -66], ["Groceries", -12], ["Utilities & council tax", -8], ["Closing buffer", 74]]} /></section></div>
-      <div className="grid three block"><section className="card"><h2>AI Insight</h2><Insights items={["The £4,100 mortgage is the main fixed-cost pressure.", "Watch groceries, utilities, teen costs, pets, and card charges.", "This month needs about £639 from savings unless income or spending changes."]} /></section><section className="card"><h2>Main money drivers</h2><Bars rows={[["Salary", 92], ["Mortgage", 66], ["Groceries", 12], ["Utilities", 8]]} /></section><section className="card"><h2>Recommended Actions</h2><ActionList items={[
-        { label: "Review mortgage affordability", href: "#forecasting", detail: "Open the editable mortgage rate, term, and forecast table" },
-        { label: "Test a higher-income scenario", href: "#finance", detail: "Open household income controls and apply a new monthly income" },
-        { label: "Cut flexible spending by £650/month", href: "#budgets?focus=flexible&category=Eating%20out", detail: "Open budgets with a flexible-spending reduction plan" }
-      ]} /></section></div>
+      <div className="grid three block"><section className="card"><h2>AI Insight</h2><Insights items={insightItems} /></section><section className="card"><h2>Main money drivers</h2><Bars rows={[["Salary", 92], ["Mortgage", 66], ["Groceries", 12], ["Utilities", 8]]} /></section><section className="card"><h2>Recommended Actions</h2><ActionList items={actions} /></section></div>
     </>
   );
 }
@@ -1157,7 +1189,8 @@ function Forecasting({ data }) {
 function Alerts({ data }) {
   const [filter, setFilter] = useState("All");
   const [activeAction, setActiveAction] = useState("");
-  const filteredAlerts = data.alerts.filter((item) => {
+  const notificationFilteredAlerts = data.alerts.filter((item) => notificationAllowsAlert(item, data.settings));
+  const filteredAlerts = notificationFilteredAlerts.filter((item) => {
     if (filter === "All") return true;
     if (filter === "Groceries") return item.category === "Groceries";
     if (filter === "Kids") return item.category === "Kids";
@@ -1166,17 +1199,17 @@ function Alerts({ data }) {
     return true;
   });
   const actionRows = [
-    ["review-basket", "Review high-movement grocery items", "Opens Tesco receipt and flags substitute staples", "al-001"],
-    ["repayment", "Schedule credit-card repayment", "Marks the card charge as actioned and opens the charge record", "al-002"],
-    ["top-up-rule", "Activate Mia top-up approval rule", "Adds a parent approval step before extra teen transfers", "al-003"],
+    notificationEnabled(data.settings, "overspend-alerts") ? ["review-basket", "Review high-movement grocery items", "Opens Tesco receipt and flags substitute staples", "al-001"] : null,
+    notificationEnabled(data.settings, "card-charge-warnings") ? ["repayment", "Schedule credit-card repayment", "Marks the card charge as actioned and opens the charge record", "al-002"] : null,
+    notificationEnabled(data.settings, "child-allowance-reminders") ? ["top-up-rule", "Activate Mia top-up approval rule", "Adds a parent approval step before extra teen transfers", "al-003"] : null,
     ["pet-basket", "Plan monthly pet-food basket", "Moves dog food from emergency purchases into monthly planning", "al-004"]
-  ];
+  ].filter(Boolean);
   const selected = actionRows.find(([id]) => id === activeAction);
   return (
     <>
       <PageHead title="Expense Alerts" subtitle="Unusual spending and anomalies detected in your accounts." />
       <KpiGrid type="alerts" />
-      <div className="chips block">{[["All", "All Alerts 23"], ["Groceries", "Groceries 8"], ["Kids", "Kids 5"], ["Pets", "Pets 6"], ["Travel", "Travel 2"]].map(([id, label]) => <button key={id} className={`chip ${filter === id ? "active" : ""}`} onClick={() => setFilter(id)}>{label}</button>)}</div>
+      <div className="chips block">{[["All", `All Alerts ${notificationFilteredAlerts.length}`], ["Groceries", `Groceries ${notificationFilteredAlerts.filter((item) => item.category === "Groceries").length}`], ["Kids", `Kids ${notificationFilteredAlerts.filter((item) => item.category === "Kids").length}`], ["Pets", `Pets ${notificationFilteredAlerts.filter((item) => item.category === "Pets").length}`], ["Travel", "Travel 0"]].map(([id, label]) => <button key={id} className={`chip ${filter === id ? "active" : ""}`} onClick={() => setFilter(id)}>{label}</button>)}</div>
       <div className="alerts-layout block">
         <section className="card">
           <h2>{filter} Expense Alerts</h2>
@@ -1184,7 +1217,7 @@ function Alerts({ data }) {
           <div className="table-scroll">
           <table className="table alert-table">
             <thead><tr><th>Severity</th><th>Vendor</th><th>Category</th><th>Was</th><th>Now</th><th>Change</th><th>%</th><th>Date</th><th>Status</th><th>Receipt</th></tr></thead>
-            <tbody>{filteredAlerts.map((item) => (
+            <tbody>{filteredAlerts.length ? filteredAlerts.map((item) => (
               <tr key={item.id} className="click-row" onClick={() => { window.location.hash = `receipt-detail?id=${item.transactionId}&from=alerts`; }}>
                 <td data-label="Severity">{statusCell(item.severity)}</td>
                 <td data-label="Vendor">{item.vendor}</td>
@@ -1197,13 +1230,17 @@ function Alerts({ data }) {
                 <td data-label="Status">{statusCell(activeAction && selected?.[3] === item.id ? "Actioned" : item.status)}</td>
                 <td data-label="Receipt"><a className="source-link" href={`#receipt-detail?id=${item.transactionId}&from=alerts`} onClick={(event) => event.stopPropagation()}>Open</a></td>
               </tr>
-            ))}</tbody>
+            )) : <tr><td colSpan="10">No alerts match the current notification preferences. Turn categories back on in Settings.</td></tr>}</tbody>
           </table>
           </div>
         </section>
         <section className="card">
           <h2>AI Insight Summary</h2>
-          <Insights items={["Spending increased by £31 at Tesco and £46 in card charges.", "Grocery and card charges drove the cash increase.", "Mia top-ups exceeded the weekly cap by £15."]} />
+          <Insights items={[
+            notificationEnabled(data.settings, "overspend-alerts") ? "Spending increased by £31 at Tesco." : null,
+            notificationEnabled(data.settings, "card-charge-warnings") ? "Card charges increased by £46 and need repayment action." : null,
+            notificationEnabled(data.settings, "child-allowance-reminders") ? "Mia top-ups exceeded the weekly cap by £15." : null
+          ].filter(Boolean)} />
           <h3>Recommended Actions</h3>
           <div className="bars action-picker">
             {actionRows.map(([id, label, description, alertId]) => (
@@ -1229,11 +1266,23 @@ function Reports({ data }) {
     "Savings Buffer Report": "#forecasting",
     "Source Notes": "#sources"
   };
+  const scheduleItems = [
+    notificationEnabled(data.settings, "bill-reminders") ? "Weekly household summary" : null,
+    "Monthly family budget pack",
+    notificationEnabled(data.settings, "holiday-savings-reminders") ? "Savings buffer report" : null,
+    notificationEnabled(data.settings, "overspend-alerts") ? "Expense breakdown" : null
+  ].filter(Boolean);
+  const reportInsights = [
+    "Household buffer is improving.",
+    notificationEnabled(data.settings, "overspend-alerts") ? "Grocery overspend alerts need attention." : null,
+    notificationEnabled(data.settings, "card-charge-warnings") ? "Card-charge warnings are active in Expense Alerts." : null,
+    "Core bills are covered, but food and teen costs are rising."
+  ].filter(Boolean);
   return (
     <>
       <PageHead title="Reports" subtitle="Generate simple household summaries for budgets, receipts, spending, and savings plans." />
       <div className="grid report-cards">{Object.entries(reportDestinations).map(([title, destination]) => <section className="card mini-card" key={title}><h3>{title}</h3><p>Detailed household analysis by period and source.</p><a className="ghost link-btn" href={destination}>Generate</a></section>)}</div>
-      <div className="grid two block"><TableCard title="Recent Reports" rows={data.reports.map((item) => [item.name, item.type, item.generated, item.owner, item.format, item.status])} heads={["Report Name", "Type", "Generated", "Owner", "Format", "Status"]} /><section className="card"><h2>Report Schedule</h2><ActionList items={["Weekly household summary", "Monthly family budget pack", "Savings buffer report", "Expense breakdown"]} /><h2>AI Report Summary</h2><Insights items={["Household buffer is improving.", "Grocery and card-charge alerts need attention.", "Core bills are covered, but food and teen costs are rising."]} /></section></div>
+      <div className="grid two block"><TableCard title="Recent Reports" rows={data.reports.map((item) => [item.name, item.type, item.generated, item.owner, item.format, item.status])} heads={["Report Name", "Type", "Generated", "Owner", "Format", "Status"]} /><section className="card"><h2>Report Schedule</h2><ActionList items={scheduleItems} /><h2>AI Report Summary</h2><Insights items={reportInsights} /></section></div>
     </>
   );
 }
@@ -1269,6 +1318,10 @@ function Settings({ user, refresh, go, data, route }) {
     await putOne("settings", { id: "ai-recommendations-enabled", enabled: !recommendationsOn, source: "User settings" });
     await refresh();
   }
+  async function toggleNotification(id) {
+    await putOne("settings", { id: `notification-${id}`, enabled: !notificationEnabled(data.settings, id), source: "Notification settings" });
+    await refresh();
+  }
   return (
     <>
       <PageHead title="Account Settings" subtitle="Separate profile settings for mother and father." />
@@ -1280,7 +1333,7 @@ function Settings({ user, refresh, go, data, route }) {
             <div className="hero-cta"><Avatar user={user} mode={avatarMode} /><button className="primary" onClick={() => setAvatarMode("photo")}>Use Profile Image</button><button className="ghost" onClick={() => setAvatarMode("initials")}>Use Initials</button></div>
             <div className="field-grid block"><label className="field">First Name<input value={user.name.split(" ")[0]} readOnly /></label><label className="field">Last Name<input value={user.name.split(" ")[1]} readOnly /></label><label className="field">Email<input value={user.email} readOnly /></label><label className="field">Preferred dashboard<select defaultValue="Household" onChange={(event) => go(event.target.value === "Groceries" ? "grocery" : event.target.value === "Kids" ? "kids" : event.target.value === "Personal" ? "finance" : "dashboard")}><option>Household</option><option>Personal</option><option>Kids</option><option>Groceries</option></select></label></div>
           </>}
-          {tab === "Notifications" && ["Bill reminders", "Overspend alerts", "Shrinkflation alerts", "Child allowance reminders", "Card charge warnings", "Holiday savings reminders"].map((item) => <div className="insight-row setting-switch" key={item}><strong>{item}</strong><span className="switch" /></div>)}
+          {tab === "Notifications" && <NotificationSettings settings={data.settings} onToggle={toggleNotification} />}
           {tab === "Bank & Cards" && <BankCardsSettings accounts={data.paymentAccounts || []} onAdd={addPaymentAccount} />}
           {tab === "AI" && <><div className="insight-row setting-switch"><div><strong>AI recommendations</strong><p>Turns behaviour-pattern recommendations on or off across Spending Trends and AI summaries.</p></div><button className={recommendationsOn ? "primary" : "ghost"} onClick={toggleAiRecommendations}>{recommendationsOn ? "On" : "Off"}</button></div><TableRows rows={[["AI proxy", "http://127.0.0.1:8787/api/ai"], ["Start command", "npm run dev"], ["Data sent", "Local app context for the current request only"]]} /></>}
           {tab === "Privacy" && <TableRows rows={[["Personal spending", "Hidden from shared reports by default"], ["Shared/family labels", "Shown in household dashboards"], ["Local data", "Stored in IndexedDB only"]]} />}
@@ -1584,6 +1637,18 @@ function analysePurchasePattern(group, monthlyRows) {
 function aiRecommendationsEnabled(settings) {
   const setting = (settings || []).find((item) => item.id === "ai-recommendations-enabled");
   return setting?.enabled !== false;
+}
+
+function notificationEnabled(settings, id) {
+  const setting = (settings || []).find((item) => item.id === `notification-${id}`);
+  return setting?.enabled !== false;
+}
+
+function notificationAllowsAlert(alert, settings) {
+  if (alert.category === "Charges") return notificationEnabled(settings, "card-charge-warnings");
+  if (alert.category === "Kids") return notificationEnabled(settings, "child-allowance-reminders");
+  if (alert.category === "Groceries") return notificationEnabled(settings, "overspend-alerts");
+  return notificationEnabled(settings, "overspend-alerts");
 }
 
 function annualFrequencyItems(realItems, selectedYear) {
@@ -2063,6 +2128,27 @@ function BankCardsSettings({ accounts, onAdd }) {
   );
 }
 
+function NotificationSettings({ settings, onToggle }) {
+  return (
+    <div className="notification-settings">
+      <p>These switches control which prompts appear across Dashboard, Expense Alerts, Money In & Out, Reports, item detail, and planning pages.</p>
+      {notificationDefinitions.map((item) => {
+        const enabled = notificationEnabled(settings, item.id);
+        return (
+          <div className="insight-row setting-switch notification-toggle" key={item.id}>
+            <div>
+              <strong>{item.label}</strong>
+              <p>{item.detail}</p>
+              <a className="source-link" href={`#${item.route}`}>Open affected page</a>
+            </div>
+            <button className={`switch-button ${enabled ? "on" : ""}`} onClick={() => onToggle(item.id)} aria-pressed={enabled}>{enabled ? "On" : "Off"}</button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function PaymentAccountTable({ accounts }) {
   return (
     <div className="table-scroll">
@@ -2218,8 +2304,10 @@ function Brand({ label }) {
 }
 
 function Avatar({ user, mode = "photo" }) {
-  if (mode === "photo" && user.avatarUrl) {
-    return <img className="avatar avatar-image" src={user.avatarUrl} alt={`${user.name} profile`} />;
+  const fallbackUrl = user.avatar === "sarah" || user.id === "mother" ? "/avatars/sarah-hughes.svg" : user.avatar === "mark" || user.id === "father" ? "/avatars/mark-hughes.svg" : "";
+  const avatarUrl = user.avatarUrl || fallbackUrl;
+  if (mode === "photo" && avatarUrl) {
+    return <img className="avatar avatar-image" src={avatarUrl} alt={`${user.name} profile`} />;
   }
   return <div className={`avatar ${mode === "photo" ? "avatar-photo" : ""} avatar-${user.avatar || user.id}`} style={{ backgroundColor: `${user.colour}22`, color: user.colour }}>{mode === "photo" ? <span>{user.initials}</span> : user.initials}</div>;
 }
