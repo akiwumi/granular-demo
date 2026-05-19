@@ -858,7 +858,7 @@ function Cashflow() {
   return (
     <>
       <PageHead title="Money In & Out" subtitle="See household income, bills, groceries, family spending, and what is left each month." />
-      <KpiGrid type="cashflow" />
+      <KpiGrid type="cashflow" linked={false} />
       <div className="grid two block"><section className="card"><h2>Income and spending</h2><BarsChart /></section><section className="card"><h2>Monthly household breakdown</h2><Bars rows={[["Opening buffer", 78], ["Salary income", 60], ["Mortgage", -66], ["Groceries", -12], ["Utilities & council tax", -8], ["Closing buffer", 74]]} /></section></div>
       <div className="grid three block"><section className="card"><h2>AI Insight</h2><Insights items={["The £4,100 mortgage is the main fixed-cost pressure.", "Watch groceries, utilities, teen costs, pets, and card charges.", "This month needs about £639 from savings unless income or spending changes."]} /></section><section className="card"><h2>Main money drivers</h2><Bars rows={[["Salary", 92], ["Mortgage", 66], ["Groceries", 12], ["Utilities", 8]]} /></section><section className="card"><h2>Recommended Actions</h2><ActionList items={["Review mortgage affordability", "Test a higher-income scenario", "Cut flexible spending by £650/month"]} /></section></div>
     </>
@@ -1685,15 +1685,17 @@ function BarMiniChart({ values, alt = null, color = "#1d72e8", tall = false, com
   );
 }
 
-function KpiGrid({ type }) {
+function KpiGrid({ type, linked = true }) {
   return <div className="grid kpis">{(kpis[type] || kpis.dashboard).map(([title, value, delta, key, down]) => {
     const graphId = `${type}-${slug(title)}`;
-    return <section className="card graph-card" key={title}><div className="metric-title"><span>{title}</span></div><div className="metric-value">{value}</div><div className={`delta ${down ? "down" : ""}`}>{delta}</div><Spark id={graphId} title={title} values={series[key] || series.cash} color={down ? "#ef4c5f" : key === "forecast" ? "#7c5ce4" : "#1d72e8"} from={routeFromGraphType(type)} /></section>;
+    return <section className="card graph-card" key={title}><div className="metric-title"><span>{title}</span></div><div className="metric-value">{value}</div><div className={`delta ${down ? "down" : ""}`}>{delta}</div><Spark id={graphId} title={title} values={series[key] || series.cash} color={down ? "#ef4c5f" : key === "forecast" ? "#7c5ce4" : "#1d72e8"} from={routeFromGraphType(type)} linked={linked} /></section>;
   })}</div>;
 }
 
-function Spark({ id = "spark", title = "Trend", values, color = "#1d72e8", from = currentBaseRoute() }) {
-  return <a className="graph-link" href={graphUrl(id, from)} aria-label={`Open ${title} graph detail`}><span className="graph-info"><InfoIcon text={graphExplanation(title, from)} /></span><BarMiniChart values={values} color={color} compact /></a>;
+function Spark({ id = "spark", title = "Trend", values, color = "#1d72e8", from = currentBaseRoute(), linked = true }) {
+  const chart = <><span className="graph-info"><InfoIcon text={graphExplanation(title, from)} /></span><BarMiniChart values={values} color={color} compact /></>;
+  if (!linked) return <div className="graph-link static-graph" aria-label={`${title} summary graph`}>{chart}</div>;
+  return <a className="graph-link" href={graphUrl(id, from)} aria-label={`Open ${title} graph detail`}>{chart}</a>;
 }
 
 function Trend({ primary = series.cash, alt = null, id = "trend", from = currentBaseRoute() }) {

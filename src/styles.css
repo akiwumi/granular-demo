@@ -40,6 +40,12 @@ button:disabled {
 .graph-link:hover {
   background: #f8fbff;
 }
+.static-graph {
+  cursor: default;
+}
+.static-graph:hover {
+  background: linear-gradient(180deg, #fbfdff 0%, #f7fafc 100%);
+}
 .graph-card .metric-value {
   margin: 8px 0 2px;
   line-height: 1.05;
@@ -68,6 +74,9 @@ button:disabled {
 }
 .graph-link:hover rect {
   opacity: 1;
+}
+.static-graph:hover rect {
+  opacity: .9;
 }
 .graph-info {
   position: absolute;
