@@ -270,6 +270,7 @@ button { cursor: pointer; }
 .module-list { grid-template-columns: repeat(4, minmax(180px, 1fr)); }
 .module-card { min-height: 160px; }
 .source-link { color: #145bb8; text-decoration: none; font-weight: 700; }
+.mobile-page-hint { display: none; }
 
 @media (max-width: 1050px) {
   .app-shell { grid-template-columns: 1fr; }
@@ -311,4 +312,168 @@ button { cursor: pointer; }
   .logos { flex-wrap: wrap; gap: 22px; font-size: 20px; }
   .hero-copy { font-size: 18px; }
   .account-picks { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 760px) {
+  body {
+    background: #fbfcfe;
+  }
+  .main {
+    padding: 12px 12px 86px;
+  }
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 15;
+    margin: -12px -12px 14px;
+    padding: 10px 12px;
+    background: rgba(251,252,254,.96);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(12px);
+  }
+  .toolbar {
+    gap: 8px;
+  }
+  .toolbar .ghost,
+  .profile-button span {
+    display: none;
+  }
+  .page-head {
+    margin-bottom: 12px;
+    gap: 10px;
+  }
+  .page-head h1 {
+    font-size: 24px;
+  }
+  .page-head p {
+    font-size: 13px;
+    line-height: 1.35;
+  }
+  .page-head::after {
+    content: "Swipe sections sideways";
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 6px 10px;
+    color: #475467;
+    background: #fff;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .kpis,
+  .grid,
+  .report-cards,
+  .module-list {
+    display: flex;
+    grid-template-columns: none;
+    gap: 12px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-left: 2px;
+    padding: 2px 2px 12px;
+    margin-left: -2px;
+    margin-right: -2px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .kpis::after,
+  .grid::after,
+  .report-cards::after,
+  .module-list::after {
+    content: "";
+    flex: 0 0 1px;
+  }
+  .kpis > *,
+  .grid > *,
+  .report-cards > *,
+  .module-list > * {
+    flex: 0 0 min(88vw, 420px);
+    min-width: min(88vw, 420px);
+    scroll-snap-align: start;
+  }
+  .grid.two,
+  .grid.three,
+  .settings-layout,
+  .field-grid {
+    display: flex;
+    grid-template-columns: none;
+  }
+  .card {
+    max-height: calc(100dvh - 190px);
+    overflow: auto;
+    padding: 14px;
+  }
+  .graph-card {
+    min-height: 210px;
+  }
+  .metric-value {
+    font-size: 24px;
+  }
+  .block {
+    margin-top: 10px;
+  }
+  .card.block,
+  .annual-matrix-card,
+  .weekly-grocery-card {
+    max-height: calc(100dvh - 180px);
+  }
+  .table-scroll,
+  .annual-table-wrap {
+    max-height: calc(100dvh - 250px);
+    overflow: auto;
+  }
+  .table tr {
+    padding: 10px 0;
+  }
+  .table td {
+    align-items: flex-start;
+    gap: 14px;
+    padding: 7px 0;
+  }
+  .table td::before {
+    flex: 0 0 118px;
+  }
+  .tabs,
+  .chips,
+  .hero-cta,
+  .toolbar-inline {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    padding-bottom: 8px;
+  }
+  .chip,
+  .tab,
+  .hero-cta > *,
+  .toolbar-inline > * {
+    flex: 0 0 auto;
+  }
+  .settings-layout {
+    gap: 12px;
+  }
+  .settings-menu {
+    flex: 0 0 190px;
+    max-height: calc(100dvh - 190px);
+    overflow: auto;
+    border-right: 0;
+    padding-right: 0;
+  }
+  .settings-layout > section {
+    flex: 0 0 min(88vw, 420px);
+    min-width: min(88vw, 420px);
+  }
+  .bar-row {
+    grid-template-columns: 98px 1fr 54px;
+    font-size: 12px;
+  }
+  .chart,
+  .bar-chart {
+    height: 210px;
+  }
+  .bottom-nav {
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+  }
 }
