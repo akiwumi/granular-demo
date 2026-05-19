@@ -199,6 +199,11 @@ export const seed = {
     members: ["Sarah, mother", "Mark, father", "Oliver, teenage son 17", "Mia, teenage daughter 15", "Poppy, golden labrador", "Scout, jack russell"],
     dataset: { transactions: 2048, receiptItems: 7846, year: 2025 },
     assumptions: {
+      housingType: "Mortgage",
+      mortgageBalance: 185000,
+      mortgageRate: 4.75,
+      mortgageTermYears: 22,
+      mortgageMonthly: 1125,
       maleWeeklyGross: 767.3,
       femaleWeeklyGross: 674.1,
       councilTaxBand: "B",
@@ -262,6 +267,9 @@ export const seed = {
   ],
   settings: [
     { id: "assumptions", name: "Source-backed assumptions", values: [
+      ["Housing", "Mortgage, £1,125/month", "Owner-occupied household model; not rent"],
+      ["Mortgage balance", "£185,000", "Editable forecast assumption"],
+      ["Mortgage rate", "4.75%", "Editable forecast assumption"],
       ["Male earner gross weekly pay", "£767.30", "Nomis Liverpool resident full-time median, 2025"],
       ["Female earner gross weekly pay", "£674.10", "Nomis Liverpool resident full-time median, 2025"],
       ["Council tax", "£1,980.57", "Liverpool Band B, 2025/26"],

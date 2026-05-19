@@ -38,12 +38,12 @@ const nav = [
   ["ai", "✦", "AI Assistant"],
   ["annual", "▥", "Annual View"],
   ["monthly", "▤", "Monthly View"],
-  ["finance", "↗", "Finance Dashboard"],
+  ["finance", "↗", "Household Money"],
   ["spending", "⌕", "Spending Explorer"],
   ["receipts", "▤", "Receipts"],
   ["receipt-detail", "◫", "Receipt Detail"],
   ["item-detail", "◇", "Item Detail"],
-  ["cashflow", "⌁", "Cash Flow Insights"],
+  ["cashflow", "⌁", "Money In & Out"],
   ["alerts", "!", "Expense Alerts", "3"],
   ["forecasting", "⇡", "Forecasting"],
   ["grocery", "☷", "Grocery Intelligence"],
@@ -71,40 +71,40 @@ const nav = [
 ];
 
 const series = {
-  cash: [76, 63, 82, 72, 104, 85, 58, 80, 76, 108, 86, 105, 98, 129],
-  income: [44, 60, 42, 52, 55, 52, 77, 53, 38, 45, 52, 50],
-  spend: [36, 41, 35, 38, 40, 46, 47, 37, 41, 42, 38, 42],
+  cash: [9400, 11684, 13740, 15806, 17654, 19491, 21138, 22579, 23884, 25698, 27304, 28416],
+  income: [6175, 6175, 6175, 6175, 6175, 6175, 6175, 6175, 6175, 6175, 6175, 6175],
+  spend: [3891, 4119, 4109, 4327, 4338, 4528, 4734, 4870, 4361, 4569, 5063, 5042],
   alerts: [4, 7, 9, 12, 11, 15, 18, 21, 23, 26, 31, 29, 35, 34],
-  forecast: [128, 122, 126, 132, 150, 139, 142, 160, 172, 181, 169, 154, 143, 136],
-  optimistic: [128, 122, 126, 138, 145, 160, 171, 181, 166, 150, 142, 135]
+  forecast: [12100, 11840, 11580, 11220, 10950, 10680, 10240, 9910, 9580, 9340, 9110, 8870],
+  optimistic: [12100, 12320, 12560, 12920, 13280, 13740, 14110, 14520, 14880, 15210, 15640, 15990]
 };
 
 const kpis = {
   dashboard: [
-    ["Cash on Hand", "£128,540", "↑ 12.5% vs Apr 30, 2024", "cash"],
-    ["Monthly Burn", "£42,350", "↓ 4.3% vs Apr 1 - Apr 30", "spend"],
-    ["Net Cash Flow", "£18,920", "↑ 26.7% vs Apr 1 - Apr 30", "cash"],
-    ["Runway", "5.3 months", "↑ 0.8 mo vs Apr 30, 2024", "forecast"],
-    ["Outstanding Invoices", "£34,680", "↑ 8.2% vs Apr 30, 2024", "income", "down"]
+    ["Cash Buffer", "£12,850", "Enough for 3.1 months of core costs", "cash"],
+    ["Monthly Spend", "£4,361", "£208 lower than last month", "spend"],
+    ["Monthly Surplus", "£1,814", "Income left after household spending", "cash"],
+    ["Months Covered", "3.1 months", "Based on essential bills and groceries", "forecast"],
+    ["Upcoming Bills", "£546", "Due in the next 14 days", "spend", "down"]
   ],
   cashflow: [
-    ["Operating Cash Flow", "£18,920", "↑ 26.7% vs Apr 1 - Apr 30", "cash"],
-    ["Cash In", "£186,760", "↑ 25.4% vs Apr 1 - Apr 30", "income"],
-    ["Cash Out", "£167,840", "↑ 18.7% vs Apr 1 - Apr 30", "spend", "down"],
-    ["Collection Cycle", "34 days", "↓ 5 days vs Apr 1 - Apr 30", "cash"],
-    ["Burn Efficiency", "1.18x", "↓ 0.12x vs Apr 1 - Apr 30", "forecast"]
+    ["Monthly Surplus", "£1,814", "Income left after spending", "cash"],
+    ["Money In", "£6,175", "Salary and regular household income", "income"],
+    ["Money Out", "£4,361", "Bills, groceries, transport, kids, pets", "spend", "down"],
+    ["Bills Covered", "31 days", "Core bills covered this month", "cash"],
+    ["Savings Rate", "29%", "Share of income left after spending", "forecast"]
   ],
   forecasting: [
-    ["Forecasted Cash", "£128,540", "↑ £12,540 vs current balance", "cash"],
-    ["Runway", "5.3 months", "▲ 0.8 mo vs current runway", "forecast"],
-    ["Revenue Growth", "+18%", "Next 12 months monthly avg.", "optimistic"],
-    ["Burn Rate", "£34,120", "↑ £1,240 vs current burn", "spend", "down"],
-    ["Breakeven Date", "Dec 28, 2024", "7 months from now", "forecast"]
+    ["Forecast Buffer", "£13,420", "Expected cash buffer after 12 months", "cash"],
+    ["Months Covered", "3.1 months", "At current essential spending", "forecast"],
+    ["Income Uplift", "+2.5%", "Editable forecast assumption", "optimistic"],
+    ["Expected Bills", "£2,805", "Mortgage, utilities, tax, loans", "spend", "down"],
+    ["Mortgage Review", "Sep 2026", "Rate-change planning point", "forecast"]
   ],
   alerts: [
     ["Open Alerts", "23", "↑ 27% vs Apr 1 - Apr 30", "alerts", "down"],
     ["High-Risk Alerts", "7", "↑ 40% vs Apr 1 - Apr 30", "alerts", "down"],
-    ["Potential Savings", "£28,450", "↑ 18% vs Apr 1 - Apr 30", "cash"],
+    ["Potential Savings", "£245", "From grocery, card, and subscription actions", "cash"],
     ["Recurring Increases", "12", "↑ 33% vs Apr 1 - Apr 30", "forecast", "down"],
     ["Vendor Concentration", "68%", "↑ 8pp vs Apr 1 - Apr 30", "optimistic", "down"]
   ]
@@ -436,12 +436,12 @@ function Dashboard({ data }) {
   const [selectedYear, setSelectedYear] = useState(years.includes(2026) ? 2026 : years.at(-1));
   return (
     <>
-      <PageHead title="Finance Dashboard" subtitle="Real-time overview of your household finances." action={<a className="primary link-btn" href="#receipts">+ Add receipt</a>} />
+      <PageHead title="Household Dashboard" subtitle="A quick view of family income, bills, shopping, savings buffer, and alerts." action={<a className="primary link-btn" href="#receipts">+ Add receipt</a>} />
       <KpiGrid type="dashboard" />
-      <div className="grid two block"><section className="card"><h2>Cash Balance Trend</h2><strong>£128,540</strong> <span className="delta">↑ 12.5%</span><Trend /></section><section className="card"><h2>AI Insight Summary <span className="status">Positive</span></h2><Insights items={["Cash flow improved this month.", "Runway remains healthy.", "Software subscriptions trending up."]} /></section></div>
+      <div className="grid two block"><section className="card"><h2>Savings buffer trend</h2><strong>£12,850</strong> <span className="delta">Enough for 3.1 months of essentials</span><Trend /></section><section className="card"><h2>AI Insight Summary <span className="status">Positive</span></h2><Insights items={["Income covers this month’s household spending.", "The savings buffer remains healthy.", "Groceries, card charges, and subscriptions need attention."]} /></section></div>
       <section className="card block"><div className="toolbar-inline"><label className="field">Annual overview year<select value={selectedYear} onChange={(event) => setSelectedYear(Number(event.target.value))}>{years.map((year) => <option key={year}>{year}</option>)}</select></label><a className="ghost link-btn" href="#annual">Open full Annual View</a></div></section>
       <AnnualOverview data={data} year={selectedYear} />
-      <div className="grid three block"><TableCard title="Recent Transactions" rows={data.transactions.map((item) => [item.merchant, item.category, item.owner, currency.format(item.amount), item.date, item.context])} heads={["Merchant", "Category", "Owner", "Amount", "Date", "Context"]} /><TableCard title="Upcoming Bills" rows={[["Council tax", "Jun 1", "£186"], ["British Gas", "Jun 5", "£214"], ["Mersey Water", "Jun 8", "£46"], ["School lunch", "Jun 10", "£62"]]} heads={["Vendor", "Due", "Amount"]} /><section className="card"><h2>Accounts Receivable</h2><Bars rows={[["Salary", 94], ["Child benefit", 28], ["Refunds", 18], ["Interest", 8]]} /></section></div>
+      <div className="grid three block"><TableCard title="Recent Transactions" rows={data.transactions.map((item) => [item.merchant, item.category, item.owner, currency.format(item.amount), item.date, item.context])} heads={["Merchant", "Category", "Owner", "Amount", "Date", "Context"]} /><TableCard title="Upcoming Bills" rows={[["Council tax", "Jun 1", "£186"], ["British Gas", "Jun 5", "£214"], ["Mersey Water", "Jun 8", "£46"], ["School lunch", "Jun 10", "£62"]]} heads={["Bill", "Due", "Amount"]} /><section className="card"><h2>Money expected</h2><Bars rows={[["Salary", 94], ["Child benefit", 28], ["Refunds", 18], ["Interest", 8]]} /></section></div>
     </>
   );
 }
@@ -637,7 +637,7 @@ function Finance({ data, refresh }) {
   }
   return (
     <>
-      <PageHead title="Household Finance Control" subtitle="Net income, fixed costs, debt, savings pots, fees, and scenarios." />
+      <PageHead title="Household Finance Control" subtitle="Income, mortgage, bills, debt, savings pots, fees, and household scenarios." />
       <section className="card block">
         <h2>Editable household income</h2>
         <div className="toolbar-inline">
@@ -648,7 +648,7 @@ function Finance({ data, refresh }) {
         <p>Changing income rewrites the income rows used by monthly surplus, annual surplus, budget planning, reports, and AI context.</p>
       </section>
       <div className="grid module-list">{modules.map(([title, value]) => <section className="card module-card graph-card" key={title}><div className="metric-title"><span>{title}</span></div><div className="metric-value">{value}</div><Spark id={`finance-${slug(title)}`} title={title} values={series.cash.slice(0, 8)} color="#109c92" from="finance" /></section>)}</div>
-      <div className="grid two block"><section className="card"><h2>Budget burn by category</h2><Bars rows={[["Groceries", 82], ["Bills", 71], ["Kids", 64], ["Pets", 58], ["Transport", 77], ["Subscriptions", 91]]} /></section><section className="card"><h2>This month needs attention</h2><Insights items={["Cap work lunches at £45 per week.", "Increase credit-card repayment by £120.", "Move £250 from grocery underspend to Spain pot."]} /></section></div>
+      <div className="grid two block"><section className="card"><h2>Budget pressure by category</h2><Bars rows={[["Groceries", 82], ["Bills", 71], ["Kids", 64], ["Pets", 58], ["Transport", 77], ["Subscriptions", 91]]} /></section><section className="card"><h2>This month needs attention</h2><Insights items={["Cap work lunches at £45 per week.", "Increase credit-card repayment by £120.", "Move £250 from grocery underspend to Spain pot."]} /></section></div>
       <div className="block"><TableCard title="Source-backed household assumptions" rows={data.assumptions.values} heads={["Assumption", "Value", "Source basis"]} /></div>
     </>
   );
@@ -857,10 +857,10 @@ function ItemDetailPage({ data, route, go }) {
 function Cashflow() {
   return (
     <>
-      <PageHead title="Cash Flow Insights" subtitle="Understand your cash movement and what drives it." />
+      <PageHead title="Money In & Out" subtitle="See household income, bills, groceries, family spending, and what is left each month." />
       <KpiGrid type="cashflow" />
-      <div className="grid two block"><section className="card"><h2>Cash Inflows and Outflows</h2><BarsChart /></section><section className="card"><h2>Cash Flow Breakdown</h2><Bars rows={[["Starting Cash", 78], ["Client Payments", 60], ["Payroll", -72], ["Rent", -26], ["Taxes & Fees", -18], ["Ending Cash", 88]]} /></section></div>
-      <div className="grid three block"><section className="card"><h2>AI Insight</h2><Insights items={["Healthy cash position.", "Watch payroll and rent.", "Collections improved by 5 days."]} /></section><section className="card"><h2>Top Cash Drivers</h2><Bars rows={[["Client Payments", 92], ["Recurring Revenue", 49], ["Refunds", 12], ["Interest", 4]]} /></section><section className="card"><h2>Recommended Actions</h2><ActionList items={["Follow up overdue invoices", "Delay non-critical spend", "Negotiate better payment terms"]} /></section></div>
+      <div className="grid two block"><section className="card"><h2>Income and spending</h2><BarsChart /></section><section className="card"><h2>Monthly household breakdown</h2><Bars rows={[["Opening buffer", 78], ["Salary income", 60], ["Mortgage", -38], ["Groceries", -24], ["Utilities & council tax", -16], ["Closing buffer", 82]]} /></section></div>
+      <div className="grid three block"><section className="card"><h2>AI Insight</h2><Insights items={["Household income covers the month.", "Watch groceries, mortgage, utilities, and pet costs.", "A £1,814 surplus can go to savings, debt, or holiday pots."]} /></section><section className="card"><h2>Main money drivers</h2><Bars rows={[["Salary", 92], ["Groceries", 49], ["Mortgage", 42], ["Utilities", 18]]} /></section><section className="card"><h2>Recommended Actions</h2><ActionList items={["Move surplus into savings pots", "Review grocery spikes", "Check card charges before payday"]} /></section></div>
     </>
   );
 }
@@ -926,8 +926,8 @@ function Forecasting({ data }) {
           </table>
         </div>
       </section>
-      <div className="grid two block"><section className="card"><h2>Projected Cash Balance</h2><Trend alt={series.optimistic} primary={series.forecast} /></section><section className="card"><h2>Projected Revenue vs Expenses</h2><BarsChart /></section></div>
-      <div className="grid three block"><TableCard title="Forecast Assumptions" rows={[["Revenue growth", "+12%", "+18%"], ["Hiring plan", "+2", "+6"], ["Customer churn", "2.5%", "2.0%"], ["Software spend", "£4,100", "£4,800"]]} heads={["Assumption", "Current", "Next 12 Months"]} /><section className="card"><h2>AI Forecast Summary</h2><Insights items={["Expected runway: 5.3 months.", "Conservative scenario runs out of cash in Feb 2025.", "Reduce software spend by £700/mo."]} /></section><section className="card"><h2>Milestones & What-if Scenarios</h2><ActionList items={["Fundraising needed", "Hiring freeze", "Reduce burn by 10%", "Breakeven target"]} /></section></div>
+      <div className="grid two block"><section className="card"><h2>Projected household buffer</h2><Trend alt={series.optimistic} primary={series.forecast} /></section><section className="card"><h2>Projected income vs spending</h2><BarsChart /></section></div>
+      <div className="grid three block"><TableCard title="Household forecast assumptions" rows={[["Income uplift", "+2.0%", "+2.5%"], ["Mortgage rate", "4.75%", "Editable"], ["Food inflation", "3.2%", "Editable"], ["Utilities", "£1,641", "Annual estimate"]]} heads={["Assumption", "Current", "Next 12 Months"]} /><section className="card"><h2>AI Forecast Summary</h2><Insights items={["Expected buffer: about 3.1 months of essentials.", "Food, energy, mortgage, and teen costs create the most pressure.", "Reducing flexible spend by £250 per month protects the household buffer."]} /></section><section className="card"><h2>What-if scenarios</h2><ActionList items={["Mortgage rises by 1%", "Food prices rise faster", "Reduce grocery spend by 10%", "Increase savings by £150/month"]} /></section></div>
     </>
   );
 }
@@ -945,7 +945,7 @@ function Alerts({ data }) {
   });
   const actionRows = [
     ["review-basket", "Review high-movement grocery items", "Opens Tesco receipt and flags substitute staples", "al-001"],
-    ["repayment", "Schedule credit-card repayment", "Marks the finance charge as actioned and routes to charges", "al-002"],
+    ["repayment", "Schedule credit-card repayment", "Marks the card charge as actioned and opens the charge record", "al-002"],
     ["top-up-rule", "Activate Mia top-up approval rule", "Adds a parent approval step before extra teen transfers", "al-003"],
     ["pet-basket", "Plan monthly pet-food basket", "Moves dog food from emergency purchases into monthly planning", "al-004"]
   ];
@@ -1001,17 +1001,17 @@ function Alerts({ data }) {
 
 function Reports({ data }) {
   const reportDestinations = {
-    "P&L Summary": "#finance",
-    "Cash Flow Statement": "#cashflow",
+    "Monthly Money Summary": "#finance",
+    "Money In & Out": "#cashflow",
     "Expense Breakdown": "#budgets",
-    "Runway Report": "#forecasting",
-    "Board Snapshot": "#sources"
+    "Savings Buffer Report": "#forecasting",
+    "Source Notes": "#sources"
   };
   return (
     <>
-      <PageHead title="Reports" subtitle="Generate, share, and manage financial reports with ease." />
+      <PageHead title="Reports" subtitle="Generate simple household summaries for budgets, receipts, spending, and savings plans." />
       <div className="grid report-cards">{Object.entries(reportDestinations).map(([title, destination]) => <section className="card mini-card" key={title}><h3>{title}</h3><p>Detailed household analysis by period and source.</p><a className="ghost link-btn" href={destination}>Generate</a></section>)}</div>
-      <div className="grid two block"><TableCard title="Recent Reports" rows={data.reports.map((item) => [item.name, item.type, item.generated, item.owner, item.format, item.status])} heads={["Report Name", "Type", "Generated", "Owner", "Format", "Status"]} /><section className="card"><h2>Report Schedule</h2><ActionList items={["Weekly financial summary", "Monthly board package", "Runway report", "Expense breakdown"]} /><h2>AI Report Summary</h2><Insights items={["Financial health improving.", "Cash runway up 0.8 months.", "Operating expenses increased 18% MoM."]} /></section></div>
+      <div className="grid two block"><TableCard title="Recent Reports" rows={data.reports.map((item) => [item.name, item.type, item.generated, item.owner, item.format, item.status])} heads={["Report Name", "Type", "Generated", "Owner", "Format", "Status"]} /><section className="card"><h2>Report Schedule</h2><ActionList items={["Weekly household summary", "Monthly family budget pack", "Savings buffer report", "Expense breakdown"]} /><h2>AI Report Summary</h2><Insights items={["Household buffer is improving.", "Grocery and card-charge alerts need attention.", "Core bills are covered, but food and teen costs are rising."]} /></section></div>
     </>
   );
 }
@@ -1019,9 +1019,9 @@ function Reports({ data }) {
 function Integrations({ data }) {
   return (
     <>
-      <PageHead title="Integrations" subtitle="Connect and manage your accounting, bank, loyalty, and source tools." />
+      <PageHead title="Connections" subtitle="Connect and manage bank, card, loyalty, receipt, and public-data sources." />
       <div className="grid module-list">{data.integrations.map((item) => <section className="card" key={item.id}><h3>{item.name}</h3><p>{item.type}<br />Last synced {item.lastSync}</p><span className="status">{item.status}</span><a className="ghost link-btn wide" href={item.type === "Source" ? "#sources" : "#appsettings"}>{item.type === "Source" ? "View source" : "Manage"}</a></section>)}</div>
-      <div className="grid three block"><TableCard title="Recent Sync Activity" rows={data.integrations.map((item, index) => [item.name, 40 + index * 31, item.lastSync, "Success"])} heads={["Source", "Records", "Time", "Status"]} /><section className="card"><h2>Data Coverage</h2><Bars rows={[["Accounts", 72], ["Transactions", 95], ["Invoices", 56], ["Bills", 48], ["Receipt Items", 88]]} /></section><section className="card"><h2>Secure Setup & Access</h2><p>API token stored locally for demo only.</p><input className="search" value="•••• •••• •••• 4d8f" readOnly /></section></div>
+      <div className="grid three block"><TableCard title="Recent Updates" rows={data.integrations.map((item, index) => [item.name, 40 + index * 31, item.lastSync, "Success"])} heads={["Source", "Records", "Time", "Status"]} /><section className="card"><h2>Household Data Coverage</h2><Bars rows={[["Bank accounts", 72], ["Transactions", 95], ["Bills", 56], ["Receipts", 48], ["Item lines", 88]]} /></section><section className="card"><h2>Secure Local Access</h2><p>Demo access token is stored locally for this browser only.</p><input className="search" value="•••• •••• •••• 4d8f" readOnly /></section></div>
     </>
   );
 }
@@ -1217,7 +1217,11 @@ function GraphDetailPage({ data, route, go }) {
       </div>
       <section className="card block">
         <h2>Underlying values</h2>
-        <table className="table"><thead><tr><th>Period</th><th>Value</th><th>Interpretation</th></tr></thead><tbody>{detail.values.map((value, index) => <tr key={`${detail.labels[index] || index}-${value}`}><td data-label="Period">{detail.labels[index] || `Point ${index + 1}`}</td><td data-label="Value">{currency.format(value)}</td><td data-label="Interpretation">{value >= average(detail.values) ? "Above average for this series" : "Below average for this series"}</td></tr>)}</tbody></table>
+        <table className="table"><thead><tr><th>Period</th><th>{detail.valueLabel || "Value"}</th>{detail.alt && <th>{detail.altLabel || "Comparison"}</th>}<th>Meaning</th></tr></thead><tbody>{detail.values.map((value, index) => {
+          const comparison = detail.alt?.[index];
+          const difference = comparison == null ? value - average(detail.values) : value - comparison;
+          return <tr key={`${detail.labels[index] || index}-${value}`}><td data-label="Period">{detail.labels[index] || `Point ${index + 1}`}</td><td data-label={detail.valueLabel || "Value"}>{currency.format(value)}</td>{detail.alt && <td data-label={detail.altLabel || "Comparison"}>{currency.format(comparison || 0)}</td>}<td data-label="Meaning">{detail.meaning?.(value, comparison, difference) || (value >= average(detail.values) ? "Higher than this chart's average." : "Lower than this chart's average.")}</td></tr>;
+        })}</tbody></table>
       </section>
     </>
   );
@@ -1525,8 +1529,8 @@ function graphExplanation(title, type = "dashboard") {
   const lower = `${title} ${type}`.toLowerCase();
   if (lower.includes("cash") || lower.includes("income")) return "This shows money available to the household. Higher bars mean more cash or income in that period. Lower bars mean there is less room for bills, savings, and surprise costs.";
   if (lower.includes("burn") || lower.includes("expense") || lower.includes("spend")) return "This shows money leaving the household. Higher bars mean heavier spending pressure. Check the receipts for high bars to see which bills or purchases caused the rise.";
-  if (lower.includes("runway") || lower.includes("forecast")) return "This estimates future breathing room. Falling bars mean the buffer is shrinking. Rising bars mean the household plan is becoming safer.";
-  if (lower.includes("invoice") || lower.includes("receivable")) return "This shows money expected but not yet received. Higher bars can be good, but only if that money arrives on time.";
+  if (lower.includes("runway") || lower.includes("forecast") || lower.includes("buffer")) return "This estimates future breathing room. Falling bars mean the household buffer is shrinking. Rising bars mean the plan is becoming safer.";
+  if (lower.includes("bill")) return "This shows bills coming up or already paid. Higher bars mean more pressure around that period.";
   if (lower.includes("coverage") || lower.includes("accounts")) return "This shows how complete the records are. Larger bars mean more of that data type is connected and available for analysis.";
   if (lower.includes("grocery") || lower.includes("basket")) return "This shows grocery and staple pressure. Higher bars usually mean a bigger shop, more teen lunch items, toiletries, pet food, or emergency top-ups.";
   return "Each bar compares one period or category with the others. Taller bars are bigger amounts. Use this to spot what is normal, what is unusually high, and where to investigate first.";
@@ -1534,29 +1538,33 @@ function graphExplanation(title, type = "dashboard") {
 
 function graphDetail(id, data) {
   const labels = months;
+  const household = householdMonthlySeries(data, 2025);
   const groceryRows = (data.yearlySpend || []).filter((row) => row.category === "Groceries" && row.year === 2025).sort((a, b) => a.monthIndex - b.monthIndex);
   const spendRows = (data.yearlySpend || []).filter((row) => row.category !== "Income" && row.year === 2025);
   const monthlySpend = months.map((month, index) => spendRows.filter((row) => row.monthIndex === index + 1).reduce((sum, row) => sum + row.amount, 0));
   if (id.includes("cash-flow") || id.includes("income-expense")) {
     return {
       title: "Cash inflows and outflows",
-      subtitle: "Monthly income bars compared with expense bars, using the current local dataset.",
+      subtitle: "Monthly income bars compared with household spending, based on the records in this app.",
       tooltip: "Green bars are money coming in. Red or amber bars are money going out. When green is much taller than spending, the month has breathing room. When spending gets close to income, the household is under pressure.",
-      values: series.income.map((value) => value * 1000),
-      alt: series.spend.map((value) => value * 1000),
+      values: household.income,
+      alt: household.spend,
       color: "#17a972",
       labels,
+      valueLabel: "Income",
+      altLabel: "Spending",
+      meaning: (income, spend) => income >= spend ? `${currency.format(income - spend)} left after spending.` : `${currency.format(spend - income)} shortfall this month.`,
       insights: ["Money coming in is usually higher than money going out, so the household is not running at a loss in most months.", "Expensive months line up with groceries, school costs, pets, transport, and household repairs.", "If the spending bar gets close to the income bar, reduce flexible spending or move money from a savings pot before the month ends."],
       explanations: [["Green bars", "Income or cash received during the month."], ["Red or amber bars", "Spending, bills, or forecast pressure for the same month."], ["What to check", "Open receipts for months where the spending bar jumps. Look for supermarket, school, pet, car, or card-charge causes."]]
     };
   }
   if (id.includes("forecast") || id.includes("runway") || id.includes("projected")) {
     return {
-      title: "Forecast and runway bars",
+      title: "Forecast and savings-buffer bars",
       subtitle: "Forward-looking monthly values, shown as bars so peaks and drops are easier to read.",
       tooltip: "This estimates future household breathing room. A shorter bar means less spare money after expected bills and spending. A taller bar means the plan is healthier.",
-      values: series.forecast.map((value) => value * 1000),
-      alt: series.optimistic.map((value) => value * 1000),
+      values: series.forecast,
+      alt: series.optimistic,
       color: "#7c5ce4",
       labels,
       insights: ["The forecast weakens when seasonal costs rise, especially school, clothing, energy, and food.", "The comparison bars show how much better the year looks if income improves or spending is tightened.", "Mortgage, loans, utilities, inflation, tax, and shrinkflation all affect how tall these bars are."],
@@ -1566,9 +1574,9 @@ function graphDetail(id, data) {
   if (id.includes("bars") || id.includes("budget") || id.includes("category") || id.includes("coverage")) {
     return {
       title: "Category bar breakdown",
-      subtitle: "Category totals and operational coverage rendered as comparable bars.",
+      subtitle: "Household categories rendered as comparable monthly bars.",
       tooltip: "Each bar is one category or record type. A taller bar means that category is taking more money, or that more records exist for it.",
-      values: monthlySpend.length ? monthlySpend : series.cash.map((value) => value * 1000),
+      values: monthlySpend.length ? monthlySpend : series.cash,
       color: "#1d72e8",
       labels,
       insights: ["Housing and groceries are the main recurring pressures.", "School, clothing, pets, car costs, and repairs make some months uneven.", "A category that keeps showing tall bars should have a monthly limit or a planned pot."],
@@ -1589,14 +1597,25 @@ function graphDetail(id, data) {
   }
   return {
     title: "Household finance chart",
-    subtitle: "A simple view of how this household figure changes over time.",
-    tooltip: "Each bar is one period. Taller bars mean a higher amount. Look for unusually tall or short bars because they usually explain where money changed.",
-    values: series.cash.map((value) => value * 1000),
+    subtitle: "Monthly household income compared with monthly spending for the Hughes family.",
+    tooltip: "Blue bars show household income. Amber bars show household spending. The gap between them is the monthly surplus or shortfall.",
+    values: household.income,
+    alt: household.spend,
     color: "#1d72e8",
     labels,
-    insights: ["A taller bar means the amount is higher than nearby periods.", "A sudden jump usually means a larger bill, a stock-up shop, income timing, or a one-off household cost.", "A sudden drop can be good for spending, but risky if the chart is showing income or cash buffer."],
-    explanations: [["Tall bar", "A larger amount than usual. Check whether this is good income, planned saving, or unwanted spending."], ["Short bar", "A smaller amount than usual. This may be good for costs, but not for income or cash."], ["What to do", "Look at the month, then open receipts, budgets, or forecast assumptions to find the cause."]]
+    valueLabel: "Income",
+    altLabel: "Spending",
+    meaning: (income, spend) => income >= spend ? `${currency.format(income - spend)} left for savings, debt repayment, or emergency buffer.` : `${currency.format(spend - income)} more spent than received.`,
+    insights: [`Average monthly income is ${currency.format(average(household.income))}.`, `Average monthly spending is ${currency.format(average(household.spend))}.`, "The useful signal is the gap: a wider gap means more room for savings; a narrow gap means the household should check flexible spending."],
+    explanations: [["Income bar", "Money coming into the household that month."], ["Spending bar", "Bills, groceries, transport, kids, pets, clothing, subscriptions, holidays, and charges."], ["What to do", "When spending gets close to income, inspect the monthly breakdown and receipts for the largest categories."]]
   };
+}
+
+function householdMonthlySeries(data, year = 2025) {
+  const rows = (data.yearlySpend || []).filter((row) => row.year === year);
+  const income = months.map((month, index) => rows.filter((row) => row.category === "Income" && row.monthIndex === index + 1).reduce((sum, row) => sum + row.amount, 0));
+  const spend = months.map((month, index) => rows.filter((row) => row.category !== "Income" && row.monthIndex === index + 1).reduce((sum, row) => sum + row.amount, 0));
+  return { income, spend, surplus: income.map((value, index) => value - spend[index]) };
 }
 
 function TableRows({ rows }) {
@@ -1666,7 +1685,8 @@ function Trend({ primary = series.cash, alt = null, id = "trend", from = current
 
 function BarsChart({ id = "income-expense-bars", from = currentBaseRoute() }) {
   const labels = ["Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May"];
-  return <a className="graph-link" href={graphUrl(id, from)} aria-label="Open bar graph detail"><span className="graph-info"><InfoIcon text={graphExplanation("Income versus expenses", from)} /></span><svg className="chart" viewBox="0 0 720 292">{[0, 1, 2, 3, 4].map((item) => <line key={item} x1="45" y1={35 + item * 45} x2="700" y2={35 + item * 45} stroke="#edf1f5" />)}{labels.map((label, index) => { const x = 58 + index * 53; const incomeHeight = series.income[index] * 2.1; const spendHeight = series.spend[index] * 2.1; return <g key={label}><rect x={x} y={220 - incomeHeight} width="16" height={incomeHeight} rx="3" fill="#31b77c" opacity=".85" /><rect x={x + 22} y={220 - spendHeight} width="16" height={spendHeight} rx="3" fill="#ef4c5f" opacity=".78" /><text className="bar-value-label" x={x + 8} y={Math.max(16, 214 - incomeHeight)} textAnchor="middle" fontSize="10" fill="#111827">{shortValue(series.income[index] * 1000)}</text><text className="bar-value-label" x={x + 30} y={Math.max(30, 214 - spendHeight)} textAnchor="middle" fontSize="10" fill="#111827">{shortValue(series.spend[index] * 1000)}</text><text x={x} y="268" fontSize="11" fill="#667085" transform={`rotate(-35 ${x} 268)`}>{label}</text></g>; })}</svg></a>;
+  const max = Math.max(...series.income, ...series.spend, 1);
+  return <a className="graph-link" href={graphUrl(id, from)} aria-label="Open bar graph detail"><span className="graph-info"><InfoIcon text={graphExplanation("Income versus spending", from)} /></span><svg className="chart" viewBox="0 0 720 292">{[0, 1, 2, 3, 4].map((item) => <line key={item} x1="45" y1={35 + item * 45} x2="700" y2={35 + item * 45} stroke="#edf1f5" />)}{labels.map((label, index) => { const x = 58 + index * 53; const incomeHeight = (series.income[index] / max) * 172; const spendHeight = (series.spend[index] / max) * 172; return <g key={label}><rect x={x} y={220 - incomeHeight} width="16" height={incomeHeight} rx="3" fill="#31b77c" opacity=".85" /><rect x={x + 22} y={220 - spendHeight} width="16" height={spendHeight} rx="3" fill="#ef4c5f" opacity=".78" /><text className="bar-value-label" x={x + 8} y={Math.max(16, 214 - incomeHeight)} textAnchor="middle" fontSize="10" fill="#111827">{shortValue(series.income[index])}</text><text className="bar-value-label" x={x + 30} y={Math.max(30, 214 - spendHeight)} textAnchor="middle" fontSize="10" fill="#111827">{shortValue(series.spend[index])}</text><text x={x} y="268" fontSize="11" fill="#667085" transform={`rotate(-35 ${x} 268)`}>{label}</text></g>; })}</svg></a>;
 }
 
 function MonthBars({ rows, id = "month-bars", from = currentBaseRoute() }) {
