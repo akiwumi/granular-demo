@@ -1620,9 +1620,10 @@ function InfoIcon({ text }) {
 function BarMiniChart({ values, alt = null, color = "#1d72e8", tall = false, compact = false, labels = [] }) {
   const all = alt ? [...values, ...alt] : values;
   const max = Math.max(...all, 1);
-  const height = tall ? 260 : compact ? 58 : 180;
-  const base = height - 28;
-  const barGap = compact ? 4 : 10;
+  const maxIndex = values.indexOf(max);
+  const height = tall ? 280 : compact ? 76 : 200;
+  const base = height - 32;
+  const barGap = compact ? 6 : 12;
   const groupWidth = Math.max(12, (680 - values.length * barGap) / Math.max(values.length, 1));
   const barWidth = alt ? Math.max(5, (groupWidth - 5) / 2) : Math.max(7, groupWidth);
   return (
@@ -1632,10 +1633,10 @@ function BarMiniChart({ values, alt = null, color = "#1d72e8", tall = false, com
         const x = 34 + index * (groupWidth + barGap);
         const barHeight = Math.max(4, (value / max) * (base - 24));
         const altHeight = alt ? Math.max(4, ((alt[index] || 0) / max) * (base - 24)) : 0;
-        const showCompactLabel = compact && (index === 0 || index === values.length - 1 || value === max);
-        const label = compact ? shortValue(value) : currency.format(value);
+        const showCompactLabel = compact && (index === 0 || index === values.length - 1 || index === maxIndex);
+        const label = shortValue(value);
         const altX = x + barWidth + 5;
-        return <g key={`${index}-${value}`}><rect x={x} y={base - barHeight} width={barWidth} height={barHeight} rx="5" fill={color} opacity=".9" />{alt && <rect x={altX} y={base - altHeight} width={barWidth} height={altHeight} rx="5" fill="#f59e0b" opacity=".86" />}{(showCompactLabel || !compact) && <text className="bar-value-label" x={x + barWidth / 2} y={Math.max(14, base - barHeight - 6)} textAnchor="middle" fontSize={compact ? "12" : "10"} fill="#111827">{label}</text>}{alt && !compact && <text className="bar-value-label" x={altX + barWidth / 2} y={Math.max(28, base - altHeight - 6)} textAnchor="middle" fontSize="10" fill="#111827">{currency.format(alt[index] || 0)}</text>} {!compact && <text x={x} y={height - 6} fontSize="11" fill="#667085" transform={`rotate(-35 ${x} ${height - 6})`}>{labels[index] || months[index % months.length] || index + 1}</text>}</g>;
+        return <g key={`${index}-${value}`}><rect x={x} y={base - barHeight} width={barWidth} height={barHeight} rx="5" fill={color} opacity=".9" />{alt && <rect x={altX} y={base - altHeight} width={barWidth} height={altHeight} rx="5" fill="#f59e0b" opacity=".86" />}{(showCompactLabel || !compact) && <text className="bar-value-label" x={x + barWidth / 2} y={Math.max(14, base - barHeight - 6)} textAnchor="middle" fontSize={compact ? "10" : "10"} fill="#111827">{label}</text>}{alt && !compact && <text className="bar-value-label" x={altX + barWidth / 2} y={Math.max(28, base - altHeight - 6)} textAnchor="middle" fontSize="10" fill="#111827">{shortValue(alt[index] || 0)}</text>} {!compact && <text x={x} y={height - 6} fontSize="11" fill="#667085" transform={`rotate(-35 ${x} ${height - 6})`}>{labels[index] || months[index % months.length] || index + 1}</text>}</g>;
       })}
     </svg>
   );
