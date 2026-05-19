@@ -6,7 +6,7 @@ const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 const fallbackCategoryPlans = [
   ["Income", [6175, 6175, 6175, 6175, 6175, 6175, 6175, 6175, 6175, 6175, 6175, 6175]],
   ["Groceries", [702, 688, 721, 739, 756, 748, 771, 785, 802, 817, 829, 846]],
-  ["Housing", [1125, 1125, 1125, 1125, 1125, 1125, 1125, 1125, 1125, 1125, 1125, 1125]],
+  ["Housing", [4100, 4100, 4100, 4100, 4100, 4100, 4100, 4100, 4100, 4100, 4100, 4100]],
   ["Council tax", [165, 165, 165, 165, 165, 165, 165, 165, 165, 165, 165, 165]],
   ["Energy", [183, 176, 162, 145, 132, 126, 121, 124, 138, 151, 168, 189]],
   ["Water", [46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46]],
@@ -71,35 +71,35 @@ const nav = [
 ];
 
 const series = {
-  cash: [9400, 11684, 13740, 15806, 17654, 19491, 21138, 22579, 23884, 25698, 27304, 28416],
+  cash: [12211, 11660, 10941, 10203, 9292, 8399, 7399, 6232, 4788, 3762, 2598, 1014],
   income: [6175, 6175, 6175, 6175, 6175, 6175, 6175, 6175, 6175, 6175, 6175, 6175],
-  spend: [3891, 4119, 4109, 4327, 4338, 4528, 4734, 4870, 4361, 4569, 5063, 5042],
+  spend: [6814, 6726, 6894, 6913, 7086, 7068, 7175, 7342, 7619, 7201, 7339, 7759],
   alerts: [4, 7, 9, 12, 11, 15, 18, 21, 23, 26, 31, 29, 35, 34],
-  forecast: [12100, 11840, 11580, 11220, 10950, 10680, 10240, 9910, 9580, 9340, 9110, 8870],
-  optimistic: [12100, 12320, 12560, 12920, 13280, 13740, 14110, 14520, 14880, 15210, 15640, 15990]
+  forecast: [12211, 11660, 10941, 10203, 9292, 8399, 7399, 6232, 4788, 3762, 2598, 1014],
+  optimistic: [12211, 11980, 11590, 11160, 10620, 10180, 9680, 9200, 8560, 8120, 7680, 7240]
 };
 
 const kpis = {
   dashboard: [
-    ["Cash Buffer", "£12,850", "Enough for 3.1 months of core costs", "cash"],
-    ["Monthly Spend", "£4,361", "£208 lower than last month", "spend"],
-    ["Monthly Surplus", "£1,814", "Income left after household spending", "cash"],
-    ["Months Covered", "3.1 months", "Based on essential bills and groceries", "forecast"],
-    ["Upcoming Bills", "£546", "Due in the next 14 days", "spend", "down"]
+    ["Cash Buffer", "£12,850", "Enough for 1.9 months at current spend", "cash"],
+    ["Monthly Spend", "£6,814", "Includes £4,100 mortgage repayment", "spend"],
+    ["Monthly Deficit", "£639", "Spending above household income", "spend", "down"],
+    ["Months Covered", "1.9 months", "At the current spending level", "forecast"],
+    ["Upcoming Bills", "£4,646", "Mortgage, council tax, energy, water, school", "spend", "down"]
   ],
   cashflow: [
-    ["Monthly Surplus", "£1,814", "Income left after spending", "cash"],
+    ["Monthly Deficit", "£639", "Spending above income this month", "spend", "down"],
     ["Money In", "£6,175", "Salary and regular household income", "income"],
-    ["Money Out", "£4,361", "Bills, groceries, transport, kids, pets", "spend", "down"],
-    ["Bills Covered", "31 days", "Core bills covered this month", "cash"],
-    ["Savings Rate", "29%", "Share of income left after spending", "forecast"]
+    ["Money Out", "£6,814", "Mortgage, bills, groceries, transport, kids, pets", "spend", "down"],
+    ["Bills Covered", "27 days", "Current income does not fully cover the month", "forecast", "down"],
+    ["Savings Rate", "-10%", "The month needs savings support", "forecast", "down"]
   ],
   forecasting: [
-    ["Forecast Buffer", "£13,420", "Expected cash buffer after 12 months", "cash"],
-    ["Months Covered", "3.1 months", "At current essential spending", "forecast"],
+    ["Forecast Buffer", "£1,014", "Expected buffer after 12 months", "forecast", "down"],
+    ["Months Covered", "0.1 months", "At current total spending", "forecast", "down"],
     ["Income Uplift", "+2.5%", "Editable forecast assumption", "optimistic"],
-    ["Expected Bills", "£2,805", "Mortgage, utilities, tax, loans", "spend", "down"],
-    ["Mortgage Review", "Sep 2026", "Rate-change planning point", "forecast"]
+    ["Expected Bills", "£5,780", "Mortgage, utilities, tax, loans", "spend", "down"],
+    ["Mortgage Review", "May 2026", "5.16% planning rate", "forecast"]
   ],
   alerts: [
     ["Open Alerts", "23", "↑ 27% vs Apr 1 - Apr 30", "alerts", "down"],
@@ -438,7 +438,7 @@ function Dashboard({ data }) {
     <>
       <PageHead title="Household Dashboard" subtitle="A quick view of family income, bills, shopping, savings buffer, and alerts." action={<a className="primary link-btn" href="#receipts">+ Add receipt</a>} />
       <KpiGrid type="dashboard" />
-      <div className="grid two block"><section className="card"><h2>Savings buffer trend</h2><strong>£12,850</strong> <span className="delta">Enough for 3.1 months of essentials</span><Trend /></section><section className="card"><h2>AI Insight Summary <span className="status">Positive</span></h2><Insights items={["Income covers this month’s household spending.", "The savings buffer remains healthy.", "Groceries, card charges, and subscriptions need attention."]} /></section></div>
+      <div className="grid two block"><section className="card"><h2>Savings buffer trend</h2><strong>£12,850</strong> <span className="delta down">Falling because the mortgage lifts fixed costs</span><Trend /></section><section className="card"><h2>AI Insight Summary <span className="status warn">Pressure</span></h2><Insights items={["The current mortgage assumption makes spending higher than income.", "The savings buffer falls through the year unless income or spending changes.", "Groceries, card charges, subscriptions, and discretionary spending need attention."]} /></section></div>
       <section className="card block"><div className="toolbar-inline"><label className="field">Annual overview year<select value={selectedYear} onChange={(event) => setSelectedYear(Number(event.target.value))}>{years.map((year) => <option key={year}>{year}</option>)}</select></label><a className="ghost link-btn" href="#annual">Open full Annual View</a></div></section>
       <AnnualOverview data={data} year={selectedYear} />
       <div className="grid three block"><TableCard title="Recent Transactions" rows={data.transactions.map((item) => [item.merchant, item.category, item.owner, currency.format(item.amount), item.date, item.context])} heads={["Merchant", "Category", "Owner", "Amount", "Date", "Context"]} /><TableCard title="Upcoming Bills" rows={[["Council tax", "Jun 1", "£186"], ["British Gas", "Jun 5", "£214"], ["Mersey Water", "Jun 8", "£46"], ["School lunch", "Jun 10", "£62"]]} heads={["Bill", "Due", "Amount"]} /><section className="card"><h2>Money expected</h2><Bars rows={[["Salary", 94], ["Child benefit", 28], ["Refunds", 18], ["Interest", 8]]} /></section></div>
@@ -859,8 +859,8 @@ function Cashflow() {
     <>
       <PageHead title="Money In & Out" subtitle="See household income, bills, groceries, family spending, and what is left each month." />
       <KpiGrid type="cashflow" />
-      <div className="grid two block"><section className="card"><h2>Income and spending</h2><BarsChart /></section><section className="card"><h2>Monthly household breakdown</h2><Bars rows={[["Opening buffer", 78], ["Salary income", 60], ["Mortgage", -38], ["Groceries", -24], ["Utilities & council tax", -16], ["Closing buffer", 82]]} /></section></div>
-      <div className="grid three block"><section className="card"><h2>AI Insight</h2><Insights items={["Household income covers the month.", "Watch groceries, mortgage, utilities, and pet costs.", "A £1,814 surplus can go to savings, debt, or holiday pots."]} /></section><section className="card"><h2>Main money drivers</h2><Bars rows={[["Salary", 92], ["Groceries", 49], ["Mortgage", 42], ["Utilities", 18]]} /></section><section className="card"><h2>Recommended Actions</h2><ActionList items={["Move surplus into savings pots", "Review grocery spikes", "Check card charges before payday"]} /></section></div>
+      <div className="grid two block"><section className="card"><h2>Income and spending</h2><BarsChart /></section><section className="card"><h2>Monthly household breakdown</h2><Bars rows={[["Opening buffer", 78], ["Salary income", 60], ["Mortgage", -66], ["Groceries", -12], ["Utilities & council tax", -8], ["Closing buffer", 74]]} /></section></div>
+      <div className="grid three block"><section className="card"><h2>AI Insight</h2><Insights items={["The £4,100 mortgage is the main fixed-cost pressure.", "Watch groceries, utilities, teen costs, pets, and card charges.", "This month needs about £639 from savings unless income or spending changes."]} /></section><section className="card"><h2>Main money drivers</h2><Bars rows={[["Salary", 92], ["Mortgage", 66], ["Groceries", 12], ["Utilities", 8]]} /></section><section className="card"><h2>Recommended Actions</h2><ActionList items={["Review mortgage affordability", "Test a higher-income scenario", "Cut flexible spending by £650/month"]} /></section></div>
     </>
   );
 }
@@ -881,9 +881,10 @@ function Forecasting({ data }) {
     utilitiesAnnual: 1641,
     councilTaxRise: 4.99,
     shrinkflationImpact: 2.0,
-    mortgageBalance: 185000,
-    mortgageRate: 4.75,
-    mortgageTermYears: 22,
+    homePurchasePrice: 750000,
+    mortgageOriginalTermYears: 30,
+    yearsOwned: 12,
+    mortgageRate: 5.16,
     loanMonthly: 210
   });
   const forecast = buildNextYearForecast(baseRows, vars);
@@ -911,8 +912,10 @@ function Forecasting({ data }) {
           ["Utilities", currency.format(vars.utilitiesAnnual), "Ofgem April-Jun 2026 cap context"]
         ]} heads={["Line", "Value", "Basis"]} />
         <TableCard title="Mortgage, loans, household taxes" rows={[
-          ["Mortgage balance", currency.format(vars.mortgageBalance), `${vars.mortgageRate}% over ${vars.mortgageTermYears} years`],
-          ["Forecast mortgage payments", currency.format(forecast.mortgageAnnual), "Annualised repayment estimate"],
+          ["Home purchase price", currency.format(vars.homePurchasePrice), "Mortgage principal assumption"],
+          ["Estimated mortgage balance", currency.format(forecast.mortgageBalance), `${forecast.mortgageRemainingYears} years remaining`],
+          ["Mortgage rate", `${vars.mortgageRate}%`, "Rightmove/Podium May 2026 average 5-year fixed"],
+          ["Forecast mortgage payments", `${currency.format(forecast.mortgageMonthly)}/month`, `${currency.format(forecast.mortgageAnnual)} annualised`],
           ["Loan repayments", currency.format(vars.loanMonthly * 12), "Editable monthly loan amount"],
           ["Council tax forecast", currency.format(forecast.councilTax), `${vars.councilTaxRise}% rise from current planning value`]
         ]} heads={["Line", "Value", "Basis"]} />
@@ -927,7 +930,7 @@ function Forecasting({ data }) {
         </div>
       </section>
       <div className="grid two block"><section className="card"><h2>Projected household buffer</h2><Trend alt={series.optimistic} primary={series.forecast} /></section><section className="card"><h2>Projected income vs spending</h2><BarsChart /></section></div>
-      <div className="grid three block"><TableCard title="Household forecast assumptions" rows={[["Income uplift", "+2.0%", "+2.5%"], ["Mortgage rate", "4.75%", "Editable"], ["Food inflation", "3.2%", "Editable"], ["Utilities", "£1,641", "Annual estimate"]]} heads={["Assumption", "Current", "Next 12 Months"]} /><section className="card"><h2>AI Forecast Summary</h2><Insights items={["Expected buffer: about 3.1 months of essentials.", "Food, energy, mortgage, and teen costs create the most pressure.", "Reducing flexible spend by £250 per month protects the household buffer."]} /></section><section className="card"><h2>What-if scenarios</h2><ActionList items={["Mortgage rises by 1%", "Food prices rise faster", "Reduce grocery spend by 10%", "Increase savings by £150/month"]} /></section></div>
+      <div className="grid three block"><TableCard title="Household forecast assumptions" rows={[["Income uplift", "+2.0%", "+2.5%"], ["Mortgage rate", "5.16%", "Editable"], ["Food inflation", "3.2%", "Editable"], ["Utilities", "£1,641", "Annual estimate"]]} heads={["Assumption", "Current", "Next 12 Months"]} /><section className="card"><h2>AI Forecast Summary</h2><Insights items={["The mortgage now dominates fixed monthly spending.", "Food, energy, mortgage, and teen costs create the most pressure.", "The household needs higher income, a mortgage restructure, or flexible-spend cuts to protect the buffer."]} /></section><section className="card"><h2>What-if scenarios</h2><ActionList items={["Mortgage rises by 1%", "Food prices rise faster", "Reduce grocery spend by 10%", "Increase savings by £150/month"]} /></section></div>
     </>
   );
 }
@@ -1367,6 +1370,9 @@ function applyIncomeOverride(rows, settings) {
 }
 
 function buildNextYearForecast(rows, vars) {
+  const mortgageBalance = remainingMortgageBalance(vars.homePurchasePrice, vars.mortgageRate, vars.mortgageOriginalTermYears, vars.yearsOwned);
+  const mortgageRemainingYears = Math.max(1, vars.mortgageOriginalTermYears - vars.yearsOwned);
+  const mortgageAnnual = mortgagePaymentAnnual(mortgageBalance, vars.mortgageRate, mortgageRemainingYears);
   const annualByCategory = Object.entries(rows.filter((row) => row.category !== "Income").reduce((acc, row) => {
     acc[row.category] = (acc[row.category] || 0) + row.amount;
     return acc;
@@ -1375,7 +1381,7 @@ function buildNextYearForecast(rows, vars) {
     const driver = forecastDriver(category);
     const rate = categoryInflationRate(category, vars);
     let forecast = actual * (1 + rate / 100);
-    if (category === "Housing") forecast = mortgagePaymentAnnual(vars.mortgageBalance, vars.mortgageRate, vars.mortgageTermYears);
+    if (category === "Housing") forecast = mortgageAnnual;
     if (category === "Energy") forecast = vars.utilitiesAnnual;
     if (category === "Council tax") forecast = actual * (1 + vars.councilTaxRise / 100);
     if (category === "Credit card & bank charges") forecast = actual + vars.loanMonthly * 12;
@@ -1384,13 +1390,15 @@ function buildNextYearForecast(rows, vars) {
   const incomeTax = estimateIncomeTax(vars.annualGrossIncome, vars.personalAllowance, vars.basicRate, vars.higherRate);
   const ni = estimateNi(vars.annualGrossIncome, vars.employeeNiMain, vars.employeeNiUpper);
   const vat = categoryRows.reduce((sum, row) => sum + vatPortion(row.category, row.forecast, vars.vatRate), 0);
-  const mortgageAnnual = mortgagePaymentAnnual(vars.mortgageBalance, vars.mortgageRate, vars.mortgageTermYears);
   const councilTax = categoryRows.find((row) => row.category === "Council tax")?.forecast || 0;
   return {
     incomeTax,
     ni,
     vat,
+    mortgageBalance,
+    mortgageRemainingYears,
     mortgageAnnual,
+    mortgageMonthly: mortgageAnnual / 12,
     councilTax,
     netIncome: vars.annualGrossIncome - incomeTax - ni,
     totalExpenses: categoryRows.reduce((sum, row) => sum + row.forecast, 0),
@@ -1416,6 +1424,14 @@ function mortgagePaymentAnnual(balance, annualRate, years) {
   const payments = years * 12;
   if (!monthlyRate) return balance / years;
   return (balance * monthlyRate * Math.pow(1 + monthlyRate, payments)) / (Math.pow(1 + monthlyRate, payments) - 1) * 12;
+}
+
+function remainingMortgageBalance(principal, annualRate, originalYears, yearsPaid) {
+  const monthlyRate = annualRate / 100 / 12;
+  const paidPayments = Math.min(originalYears * 12, Math.max(0, yearsPaid * 12));
+  const monthlyPayment = mortgagePaymentAnnual(principal, annualRate, originalYears) / 12;
+  if (!monthlyRate) return Math.max(0, principal - monthlyPayment * paidPayments);
+  return Math.max(0, principal * Math.pow(1 + monthlyRate, paidPayments) - monthlyPayment * ((Math.pow(1 + monthlyRate, paidPayments) - 1) / monthlyRate));
 }
 
 function categoryInflationRate(category, vars) {
@@ -1444,7 +1460,7 @@ function vatPortion(category, amount, vatRate) {
 function forecastDriver(category) {
   return {
     "Groceries": "Food inflation + shrinkflation",
-    "Housing": "Mortgage balance/rate/term",
+    "Housing": "£750k home, 30-year mortgage, 12 years owned",
     "Council tax": "Local tax rise assumption",
     "Energy": "Ofgem cap context",
     "Transport & car": "Fuel inflation + car running cost",
@@ -1469,9 +1485,10 @@ function labelForForecast(key) {
     utilitiesAnnual: "Utilities annual",
     councilTaxRise: "Council tax rise %",
     shrinkflationImpact: "Shrinkflation impact %",
-    mortgageBalance: "Mortgage balance",
+    homePurchasePrice: "Home purchase price",
+    mortgageOriginalTermYears: "Original mortgage term years",
+    yearsOwned: "Years already owned",
     mortgageRate: "Mortgage rate %",
-    mortgageTermYears: "Mortgage term years",
     loanMonthly: "Loans monthly"
   })[key] || key;
 }

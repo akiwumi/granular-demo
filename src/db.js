@@ -70,10 +70,17 @@ export async function clearStore(storeName) {
 }
 
 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const currentMortgageRate = 5.16;
+const homePurchasePrice = 750000;
+const mortgageOriginalTermYears = 30;
+const yearsOwned = 12;
+const mortgageRemainingTermYears = mortgageOriginalTermYears - yearsOwned;
+const estimatedMortgageBalance = 576058;
+const mortgageMonthlyRepayment = 4100;
 const categoryPlans = [
   ["Income", [6175, 6175, 6175, 6175, 6175, 6175, 6175, 6175, 6175, 6175, 6175, 6175], "ONS/Nomis"],
   ["Groceries", [702, 688, 721, 739, 756, 748, 771, 785, 802, 817, 829, 846], "ONS Family Spending + DEFRA Family Food"],
-  ["Housing", [1125, 1125, 1125, 1125, 1125, 1125, 1125, 1125, 1125, 1125, 1125, 1125], "ONS Family Spending"],
+  ["Housing", Array(12).fill(mortgageMonthlyRepayment), "Rightmove/Podium May 2026 average 5-year fixed mortgage rate"],
   ["Council tax", [165, 165, 165, 165, 165, 165, 165, 165, 165, 165, 165, 165], "Liverpool City Council"],
   ["Energy", [183, 176, 162, 145, 132, 126, 121, 124, 138, 151, 168, 189], "Ofgem"],
   ["Water", [46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46], "ONS Family Spending"],
@@ -200,10 +207,14 @@ export const seed = {
     dataset: { transactions: 2048, receiptItems: 7846, year: 2025 },
     assumptions: {
       housingType: "Mortgage",
-      mortgageBalance: 185000,
-      mortgageRate: 4.75,
-      mortgageTermYears: 22,
-      mortgageMonthly: 1125,
+      homePurchasePrice,
+      mortgageOriginalPrincipal: homePurchasePrice,
+      mortgageOriginalTermYears,
+      yearsOwned,
+      mortgageRemainingTermYears,
+      mortgageBalance: estimatedMortgageBalance,
+      mortgageRate: currentMortgageRate,
+      mortgageMonthly: mortgageMonthlyRepayment,
       maleWeeklyGross: 767.3,
       femaleWeeklyGross: 674.1,
       councilTaxBand: "B",
@@ -263,13 +274,14 @@ export const seed = {
     { id: "src-004", source: "ONS CPI basket/inflation", url: "https://www.ons.gov.uk/economy/inflationandpriceindices/articles/ukconsumerpriceinflationbasketofgoodsandservices/2024/pdf", note: "Basket categories include food, clothing, transport, pet care, dog food and dog treats; mapped to item-level inflation tags." },
     { id: "src-005", source: "Ofgem energy price cap", url: "https://www.ofgem.gov.uk/news/new-energy-price-cap-level-october-december-2024-starts-today", note: "2024 typical annual dual-fuel cap values used for gas/electricity bill modelling." },
     { id: "src-006", source: "Liverpool City Council Council Tax", url: "https://liverpool.gov.uk/council-tax/how-much/?rp=true", note: "2025/26 Band B annual council tax £1,980.57; 2024/25 £1,882.53." },
-    { id: "src-007", source: "RAC Foundation fuel factsheet", url: "https://www.racfoundation.org/wp-content/uploads/Fuel_Factsheet_10_December_2024.pdf?v=11122024", note: "10 Dec 2024 UK petrol average 136.40p/litre; used for car running-cost seed values." }
+    { id: "src-007", source: "RAC Foundation fuel factsheet", url: "https://www.racfoundation.org/wp-content/uploads/Fuel_Factsheet_10_December_2024.pdf?v=11122024", note: "10 Dec 2024 UK petrol average 136.40p/litre; used for car running-cost seed values." },
+    { id: "src-008", source: "Rightmove current UK mortgage rates", url: "https://www.rightmove.co.uk/news/articles/property-news/current-uk-mortgage-rates/", note: "Updated 16 May 2026: average 5-year fixed mortgage rate 5.16%; used for the household repayment model." }
   ],
   settings: [
     { id: "assumptions", name: "Source-backed assumptions", values: [
-      ["Housing", "Mortgage, £1,125/month", "Owner-occupied household model; not rent"],
-      ["Mortgage balance", "£185,000", "Editable forecast assumption"],
-      ["Mortgage rate", "4.75%", "Editable forecast assumption"],
+      ["Housing", "Mortgage, £4,100/month", "£750,000 home, 30-year repayment mortgage, owned for 12 years"],
+      ["Mortgage balance", "£576,058 estimated", "18 years remaining, calculated at 5.16%"],
+      ["Mortgage rate", "5.16%", "Rightmove/Podium average 5-year fixed rate, 16 May 2026"],
       ["Male earner gross weekly pay", "£767.30", "Nomis Liverpool resident full-time median, 2025"],
       ["Female earner gross weekly pay", "£674.10", "Nomis Liverpool resident full-time median, 2025"],
       ["Council tax", "£1,980.57", "Liverpool Band B, 2025/26"],
@@ -295,6 +307,7 @@ export async function ensureSeeded() {
     await putMany("settings", seed.settings);
     const yearly = await getAll("yearly_spend");
     if (yearly.length < seed.yearly_spend.length || !yearly.some((row) => row.year === 2026)) await putMany("yearly_spend", seed.yearly_spend);
+    else await putMany("yearly_spend", seed.yearly_spend);
     return;
   }
   for (const [storeName, values] of Object.entries(seed)) await putMany(storeName, values);
