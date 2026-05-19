@@ -244,6 +244,43 @@ button:disabled {
   font-weight: 800;
   text-decoration: none;
 }
+.receipt-layout {
+  align-items: start;
+}
+.receipt-card {
+  background: #fff;
+}
+.receipt-store {
+  text-align: center;
+  border-bottom: 1px dashed #d8dee8;
+  padding-bottom: 16px;
+  margin-bottom: 8px;
+}
+.receipt-store h2 {
+  margin-bottom: 4px;
+}
+.receipt-table th,
+.receipt-table td {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.receipt-summary {
+  border-top: 1px dashed #d8dee8;
+  margin-top: 14px;
+  padding-top: 14px;
+  display: grid;
+  gap: 8px;
+}
+.receipt-summary div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+.receipt-total {
+  border-top: 1px solid #e5eaf0;
+  padding-top: 12px;
+  font-size: 18px;
+}
 .profile-button {
   border: 1px solid var(--line);
   background: #fff;

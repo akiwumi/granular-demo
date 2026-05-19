@@ -701,7 +701,7 @@ function ReceiptItems({ data, go }) {
   const grouped = data.transactions.map((tx) => ({
     ...tx,
     items: data.receiptItems.filter((item) => item.transactionId === tx.id)
-  })).filter((tx) => tx.items.length);
+  }));
   return (
     <>
       <PageHead title="Receipts" subtitle="Receipt totals are only the header. Every product line is stored and searchable." />
@@ -710,6 +710,7 @@ function ReceiptItems({ data, go }) {
           <section className="card" key={receipt.id}>
             <div className="metric-title"><span>{receipt.merchant}</span><span>{receipt.date}</span></div>
             <div className="metric-value">{currency.format(receipt.amount)}</div>
+            <p>{receipt.items.length} item lines · final card charge matched</p>
             <table className="table">
               <thead><tr><th>Product</th><th>Qty</th><th>Unit</th><th>Total</th></tr></thead>
               <tbody>{receipt.items.map((item) => <tr key={item.id}><td data-label="Product"><button className="text-link" onClick={() => go(`item-detail?id=${item.id}&from=receipts`)}><strong>{item.item}</strong><br /><small>{item.variant}</small></button></td><td data-label="Qty">{item.quantity}</td><td data-label="Unit">{currency.format(item.unitPrice)}</td><td data-label="Total">{currency.format(item.lineTotal)}</td></tr>)}</tbody>
@@ -751,35 +752,48 @@ function ReceiptDetailPage({ data, route, go }) {
   const backLabel = from === "alerts" ? "Back to alerts" : "Back to receipts";
   const receipt = data.transactions.find((item) => item.id === id) || data.transactions[0];
   const items = data.receiptItems.filter((item) => item.transactionId === receipt.id);
+  const totals = receiptTotals(receipt, items);
   const categoryRows = categoryTotals(items);
   return (
     <>
       <PageHead title={`${receipt.merchant} Receipt`} subtitle={`${receipt.date} · ${receipt.owner} · ${receipt.context}`} action={<button className="ghost" onClick={() => go(backTarget)}>{backLabel}</button>} />
-      <div className="grid two">
+      <div className="grid two receipt-layout">
+        <section className="card receipt-card">
+          <div className="receipt-store">
+            <h2>{receipt.merchant}</h2>
+            <p>E-receipt · {receipt.date}</p>
+            <p>Receipt no. {receiptNumber(receipt)} · Paid by household card</p>
+          </div>
+          <table className="table receipt-table">
+            <thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>VAT</th><th>Total</th></tr></thead>
+            <tbody>{items.map((item) => {
+              const rate = vatRateForItem(item);
+              return <tr key={item.id}><td data-label="Item"><button className="text-link" onClick={() => go(`item-detail?id=${item.id}&from=receipt-detail&receipt=${receipt.id}`)}><strong>{item.item}</strong><br /><small>{item.variant}</small></button></td><td data-label="Qty">{item.quantity}</td><td data-label="Unit">{currency.format(item.unitPrice)}</td><td data-label="VAT">{rate ? `${rate}% inc.` : "0%"}</td><td data-label="Total">{currency.format(item.lineTotal)}</td></tr>;
+            })}</tbody>
+          </table>
+          <div className="receipt-summary">
+            <div><span>Items subtotal</span><strong>{currency.format(totals.itemSubtotal)}</strong></div>
+            <div><span>VAT included</span><strong>{currency.format(totals.vatIncluded)}</strong></div>
+            <div><span>Zero-rated items</span><strong>{currency.format(totals.zeroRated)}</strong></div>
+            <div><span>Other charges</span><strong>{currency.format(totals.otherCharges)}</strong></div>
+            <div className="receipt-total"><span>Final card charge</span><strong>{currency.format(receipt.amount)}</strong></div>
+          </div>
+        </section>
         <section className="card">
-          <div className="metric-title"><span>Total</span><span>{receipt.id}</span></div>
-          <div className="metric-value">{currency.format(receipt.amount)}</div>
+          <h2>Receipt audit</h2>
           <TableRows rows={[
             ["Seller", receipt.merchant],
             ["Date", receipt.date],
             ["Owner", receipt.owner],
             ["Context", receipt.context],
             ["Item lines", items.length],
-            ["Calculated item total", currency.format(items.reduce((sum, item) => sum + item.lineTotal, 0))]
+            ["Calculated item total", currency.format(totals.itemSubtotal)],
+            ["Final charge matched", totals.balanced ? "Yes" : "Needs review"]
           ]} />
-        </section>
-        <section className="card">
-          <h2>Receipt categories feeding totals</h2>
+          <h2>Categories feeding totals</h2>
           <Bars rows={categoryRows.map(([category, value]) => [category, Math.round(value)])} />
         </section>
       </div>
-      <section className="card block">
-        <h2>Item lines</h2>
-        <table className="table">
-          <thead><tr><th>Product</th><th>Category</th><th>Buyer</th><th>Qty</th><th>Unit</th><th>Total</th></tr></thead>
-          <tbody>{items.map((item) => <tr key={item.id}><td data-label="Product"><button className="text-link" onClick={() => go(`item-detail?id=${item.id}&from=receipt-detail&receipt=${receipt.id}`)}><strong>{item.item}</strong><br /><small>{item.variant}</small></button></td><td data-label="Category">{item.category}</td><td data-label="Buyer">{item.buyer}</td><td data-label="Qty">{item.quantity}</td><td data-label="Unit">{currency.format(item.unitPrice)}</td><td data-label="Total">{currency.format(item.lineTotal)}</td></tr>)}</tbody>
-        </table>
-      </section>
     </>
   );
 }
@@ -1329,6 +1343,34 @@ function categoryTotals(items) {
     acc[item.category] = (acc[item.category] || 0) + item.lineTotal;
     return acc;
   }, {}));
+}
+
+function vatRateForItem(item) {
+  if (item.vatRate != null) return item.vatRate;
+  if (["Household", "Toiletries", "Clothing", "DIY", "Pets", "Car", "Activities"].includes(item.category)) return 20;
+  if (item.category === "Charges" && /delivery|bag|carrier/i.test(`${item.item} ${item.variant}`)) return 20;
+  return 0;
+}
+
+function receiptTotals(receipt, items) {
+  const itemSubtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
+  const vatIncluded = items.reduce((sum, item) => {
+    const rate = vatRateForItem(item);
+    return sum + (rate ? item.lineTotal * rate / (100 + rate) : 0);
+  }, 0);
+  const zeroRated = items.reduce((sum, item) => sum + (vatRateForItem(item) ? 0 : item.lineTotal), 0);
+  const otherCharges = Math.max(0, receipt.amount - itemSubtotal);
+  return {
+    itemSubtotal,
+    vatIncluded,
+    zeroRated,
+    otherCharges,
+    balanced: Math.abs(receipt.amount - itemSubtotal - otherCharges) < 0.01
+  };
+}
+
+function receiptNumber(receipt) {
+  return `${receipt.date.replace(/-/g, "")}-${receipt.id.toUpperCase()}`;
 }
 
 function groceryRelevantItems(items) {
