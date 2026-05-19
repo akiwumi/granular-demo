@@ -784,7 +784,7 @@ function ReceiptDetailPage({ data, route, go }) {
   );
 }
 
-function BudgetPlanner({ data }) {
+function BudgetPlanner({ data, route }) {
   const spendingRows = (data.yearlySpend || []).filter((row) => row.category !== "Income");
   const categories = [...new Set(spendingRows.map((row) => row.category))];
   const overrides = Object.fromEntries((data.settings || []).filter((setting) => setting.id?.startsWith("budget-override-")).map((setting) => [setting.category, setting.amount]));
@@ -793,8 +793,10 @@ function BudgetPlanner({ data }) {
     return [category, overrides[category] || Math.round(actual * 0.96)];
   }));
   const [budgets, setBudgets] = useState(starting);
+  const focus = routeParam(route, "focus");
+  const requestedCategory = routeParam(route, "category");
   const [selectedMonth, setSelectedMonth] = useState("All");
-  const [selectedCategory, setSelectedCategory] = useState(categories[0] || "Groceries");
+  const [selectedCategory, setSelectedCategory] = useState(requestedCategory && categories.includes(requestedCategory) ? requestedCategory : categories[0] || "Groceries");
   const visibleRows = spendingRows.filter((row) => selectedMonth === "All" || row.month === selectedMonth);
   const actualByCategory = Object.fromEntries(categories.map((category) => [category, visibleRows.filter((row) => row.category === category).reduce((sum, row) => sum + row.amount, 0)]));
   const annualActualByCategory = Object.fromEntries(categories.map((category) => [category, spendingRows.filter((row) => row.category === category).reduce((sum, row) => sum + row.amount, 0)]));
@@ -804,6 +806,15 @@ function BudgetPlanner({ data }) {
   return (
     <>
       <PageHead title="Budget Planner" subtitle="Edit annual category budgets, inspect monthly actuals, and drill down to product lines." />
+      {focus === "flexible" && <section className="card block">
+        <h2>Flexible spending action plan</h2>
+        <p>Money In & Out shows the mortgage pushing the month about £639 short. Use this page to reduce editable budgets for flexible categories until the monthly gap is covered.</p>
+        <TableRows rows={[
+          ["Target monthly reduction", "£650"],
+          ["First categories to test", "Eating out, subscriptions, holiday savings, clothing"],
+          ["What to do here", "Edit annual budget figures below and watch the variance update instantly"]
+        ]} />
+      </section>}
       <div className="grid three">
         <section className="card"><h2>Annual actual</h2><div className="metric-value">{currency.format(totalActual)}</div><p>From 12 months of source-backed category data plus item-level receipt lines.</p></section>
         <section className="card"><h2>Editable budget</h2><div className="metric-value">{currency.format(totalBudget)}</div><p>Change category targets below. Calculations update instantly.</p></section>
@@ -860,7 +871,11 @@ function Cashflow() {
       <PageHead title="Money In & Out" subtitle="See household income, bills, groceries, family spending, and what is left each month." />
       <KpiGrid type="cashflow" linked={false} />
       <div className="grid two block"><section className="card"><h2>Income and spending</h2><BarsChart /></section><section className="card"><h2>Monthly household breakdown</h2><Bars rows={[["Opening buffer", 78], ["Salary income", 60], ["Mortgage", -66], ["Groceries", -12], ["Utilities & council tax", -8], ["Closing buffer", 74]]} /></section></div>
-      <div className="grid three block"><section className="card"><h2>AI Insight</h2><Insights items={["The £4,100 mortgage is the main fixed-cost pressure.", "Watch groceries, utilities, teen costs, pets, and card charges.", "This month needs about £639 from savings unless income or spending changes."]} /></section><section className="card"><h2>Main money drivers</h2><Bars rows={[["Salary", 92], ["Mortgage", 66], ["Groceries", 12], ["Utilities", 8]]} /></section><section className="card"><h2>Recommended Actions</h2><ActionList items={["Review mortgage affordability", "Test a higher-income scenario", "Cut flexible spending by £650/month"]} /></section></div>
+      <div className="grid three block"><section className="card"><h2>AI Insight</h2><Insights items={["The £4,100 mortgage is the main fixed-cost pressure.", "Watch groceries, utilities, teen costs, pets, and card charges.", "This month needs about £639 from savings unless income or spending changes."]} /></section><section className="card"><h2>Main money drivers</h2><Bars rows={[["Salary", 92], ["Mortgage", 66], ["Groceries", 12], ["Utilities", 8]]} /></section><section className="card"><h2>Recommended Actions</h2><ActionList items={[
+        { label: "Review mortgage affordability", href: "#forecasting", detail: "Open the editable mortgage rate, term, and forecast table" },
+        { label: "Test a higher-income scenario", href: "#finance", detail: "Open household income controls and apply a new monthly income" },
+        { label: "Cut flexible spending by £650/month", href: "#budgets?focus=flexible&category=Eating%20out", detail: "Open budgets with a flexible-spending reduction plan" }
+      ]} /></section></div>
     </>
   );
 }
@@ -1722,7 +1737,12 @@ function Bars({ rows, id = "bars", from = currentBaseRoute() }) {
 }
 
 function ActionList({ items }) {
-  return <div className="bars">{items.map((item, index) => <div className="insight-row action-row" key={item}><div className={`icon-dot ${index % 2 ? "warn" : ""}`}>{index + 1}</div><strong>{item}</strong><span>›</span></div>)}</div>;
+  return <div className="bars">{items.map((item, index) => {
+    const action = typeof item === "string" ? { label: item } : item;
+    const content = <><div className={`icon-dot ${index % 2 ? "warn" : ""}`}>{index + 1}</div><div><strong>{action.label}</strong>{action.detail && <p>{action.detail}</p>}</div><span>›</span></>;
+    if (action.href) return <a className="insight-row action-row action-link" key={action.label} href={action.href}>{content}</a>;
+    return <div className="insight-row action-row" key={action.label}>{content}</div>;
+  })}</div>;
 }
 
 function TableCard({ title, rows, heads }) {
