@@ -1641,18 +1641,20 @@ function AnnualOverview({ data, extraItems = [], year = 2025 }) {
     return [month, currency.format(monthIncome), currency.format(monthSpend), currency.format(monthIncome - monthSpend)];
   });
   return (
-    <section className="card block">
+    <>
+    <section className="card block annual-overview-summary">
       <h2>{year} household annual view</h2>
       <div className="grid three">
         <div><small>Annual income</small><div className="metric-value">{currency.format(annualIncome)}</div></div>
         <div><small>Annual spend</small><div className="metric-value">{currency.format(annualSpend)}</div></div>
         <div><small>Projected surplus</small><div className="metric-value">{currency.format(annualIncome - annualSpend)}</div></div>
       </div>
-      <div className="grid two block">
-        <section><h3>Annual category totals</h3><Bars rows={categoryTotalsData.slice(0, 10).map(([category, amount]) => [category, annualSpend ? Math.round((amount / annualSpend) * 100) : 0])} /></section>
-        <section><h3>Monthly breakdown</h3><table className="table"><thead><tr><th>Month</th><th>Income</th><th>Spend</th><th>Surplus</th></tr></thead><tbody>{monthlyRows.map((row) => <tr key={row[0]}>{row.map((cell, index) => <td key={`${row[0]}-${index}`} data-label={["Month", "Income", "Spend", "Surplus"][index]}>{cell}</td>)}</tr>)}</tbody></table></section>
-      </div>
     </section>
+    <div className="grid two block annual-overview-panels">
+      <section className="card annual-overview-panel"><h3>Annual category totals</h3><Bars rows={categoryTotalsData.slice(0, 10).map(([category, amount]) => [category, annualSpend ? Math.round((amount / annualSpend) * 100) : 0])} /></section>
+      <section className="card annual-overview-panel"><h3>Monthly breakdown</h3><div className="table-scroll"><table className="table"><thead><tr><th>Month</th><th>Income</th><th>Spend</th><th>Surplus</th></tr></thead><tbody>{monthlyRows.map((row) => <tr key={row[0]}>{row.map((cell, index) => <td key={`${row[0]}-${index}`} data-label={["Month", "Income", "Spend", "Surplus"][index]}>{cell}</td>)}</tr>)}</tbody></table></div></section>
+    </div>
+    </>
   );
 }
 

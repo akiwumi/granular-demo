@@ -271,6 +271,10 @@ button { cursor: pointer; }
 .module-card { min-height: 160px; }
 .source-link { color: #145bb8; text-decoration: none; font-weight: 700; }
 .mobile-page-hint { display: none; }
+.annual-overview-panels .table-scroll {
+  max-height: 360px;
+  overflow: auto;
+}
 
 @media (max-width: 1050px) {
   .app-shell { grid-template-columns: 1fr; }
@@ -414,6 +418,17 @@ button { cursor: pointer; }
   .weekly-grocery-card {
     max-height: min(68dvh, 620px);
     overflow: auto;
+  }
+  .annual-overview-summary {
+    max-height: none;
+    overflow: visible;
+  }
+  .annual-overview-panel {
+    max-height: min(54dvh, 460px);
+    overflow: auto;
+  }
+  .annual-overview-panels .table-scroll {
+    max-height: min(46dvh, 390px);
   }
   .table-scroll,
   .annual-table-wrap {
