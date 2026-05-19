@@ -472,6 +472,8 @@ function AIAssistant({ data, refresh, go }) {
   const [status, setStatus] = useState("");
   const [result, setResult] = useState(null);
   const [health, setHealth] = useState(null);
+  const years = availableYears(data);
+  const [searchYear, setSearchYear] = useState(years.includes(2026) ? 2026 : years.at(-1));
   const recommendationsOn = aiRecommendationsEnabled(data.settings);
   useEffect(() => {
     fetch("http://127.0.0.1:8787/api/health").then((response) => response.json()).then(setHealth).catch((error) => setHealth({ ok: false, error: error.message }));
@@ -481,8 +483,9 @@ function AIAssistant({ data, refresh, go }) {
     receiptItems: data.receiptItems.map(({ id, transactionId, item, variant, seller, category, buyer, lineTotal, purchasedAt, tags }) => ({ id, transactionId, item, variant, seller, category, buyer, lineTotal, purchasedAt, tags })),
     transactions: data.transactions,
     yearlySpend: data.yearlySpend,
+    selectedSearchYear: searchYear,
     assumptions: data.assumptions?.values || []
-  }), [data]);
+  }), [data, searchYear]);
 
   async function askAi() {
     if (!instruction.trim()) return;
@@ -496,7 +499,7 @@ function AIAssistant({ data, refresh, go }) {
       });
       const action = await response.json();
       if (!response.ok) throw new Error(action.error || "AI request failed");
-      await applyAiAction(action, data, refresh, go, setResult);
+      await applyAiAction(action, data, refresh, go, setResult, searchYear, instruction);
       setStatus("Done");
     } catch (error) {
       setStatus(error.message);
@@ -517,7 +520,11 @@ function AIAssistant({ data, refresh, go }) {
         ]} />
       </section>
       <section className="card">
-        <label className="field">Ask for a search or data change<textarea rows="4" value={instruction} onChange={(event) => setInstruction(event.target.value)} placeholder="Examples: find Tesco purchases; set household monthly income to 6800; set Groceries annual budget to 9500; tag green jacket as school uniform" /></label>
+        <div className="toolbar-inline">
+          <label className="field">Default search year<select value={searchYear} onChange={(event) => setSearchYear(Number(event.target.value))}>{years.map((year) => <option key={year}>{year}</option>)}</select></label>
+          <p>Searches cover the whole selected year unless your request names a different year, month, or date.</p>
+        </div>
+        <label className="field">Ask for a search or data change<textarea rows="4" value={instruction} onChange={(event) => setInstruction(event.target.value)} placeholder="Examples: find Tesco purchases; find Boots in 2024; find groceries in May 2026; set household monthly income to 6800" /></label>
         <div className="hero-cta"><button className="primary" onClick={askAi}>Run AI action</button><button className="ghost" onClick={() => setInstruction("find all Tesco purchases")}>Example search</button><button className="ghost" onClick={() => setInstruction("set household monthly income to 6800")}>Example income edit</button><button className="ghost" onClick={() => setInstruction("set Groceries annual budget to 9500")}>Example budget edit</button></div>
         {status && <p><strong>{status}</strong></p>}
       </section>
@@ -526,9 +533,11 @@ function AIAssistant({ data, refresh, go }) {
   );
 }
 
-async function applyAiAction(action, data, refresh, go, setResult) {
+async function applyAiAction(action, data, refresh, go, setResult, defaultYear, instruction = "") {
   if (action.action === "search_items") {
-    const rows = filterItemRows(data.receiptItems, action.query || "").map((item) => {
+    const scope = aiSearchScope(action, instruction, defaultYear);
+    const matchedItems = filterAiItems(filterItemRows(data.receiptItems, action.query || ""), scope);
+    const rows = matchedItems.map((item) => {
       const tx = data.transactions.find((record) => record.id === item.transactionId);
       const purchaseDate = item.purchasedAt || tx?.date || "Date missing";
       return [
@@ -541,12 +550,15 @@ async function applyAiAction(action, data, refresh, go, setResult) {
         <a className="source-link" href={`#receipt-detail?id=${item.transactionId}&from=ai`}>Open receipt</a>
       ];
     });
-    setResult({ title: `Item results: ${action.query}`, heads: ["Item", "Seller", "Category", "Buyer", "Purchase date", "Item total", "Receipt"], rows, message: action.answer });
+    const total = matchedItems.reduce((sum, item) => sum + Number(item.lineTotal || 0), 0);
+    setResult({ title: `Item results: ${action.query}`, heads: ["Item", "Seller", "Category", "Buyer", "Purchase date", "Item total", "Receipt"], rows, message: `${scope.label}. ${rows.length} item lines found, total item spend ${currency.format(total)}.${action.answer ? ` ${action.answer}` : ""}` });
     return;
   }
   if (action.action === "search_receipts") {
+    const scope = aiSearchScope(action, instruction, defaultYear);
     const query = String(action.query || "").toLowerCase();
-    const rows = data.transactions.filter((tx) => [tx.merchant, tx.category, tx.owner, tx.context, tx.date, ...dateSearchTokens(tx.date)].join(" ").toLowerCase().includes(query)).map((tx) => [
+    const matchedReceipts = filterAiTransactions(data.transactions.filter((tx) => [tx.merchant, tx.category, tx.owner, tx.context, tx.date, ...dateSearchTokens(tx.date)].join(" ").toLowerCase().includes(query)), scope);
+    const rows = matchedReceipts.map((tx) => [
       tx.merchant,
       tx.category,
       tx.owner,
@@ -555,7 +567,8 @@ async function applyAiAction(action, data, refresh, go, setResult) {
       tx.context,
       <a className="source-link" href={`#receipt-detail?id=${tx.id}&from=ai`}>Open receipt</a>
     ]);
-    setResult({ title: `Receipt results: ${action.query}`, heads: ["Merchant", "Category", "Owner", "Purchase date", "Total", "Context", "Receipt"], rows, message: action.answer });
+    const total = matchedReceipts.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    setResult({ title: `Receipt results: ${action.query}`, heads: ["Merchant", "Category", "Owner", "Purchase date", "Total", "Context", "Receipt"], rows, message: `${scope.label}. ${rows.length} receipts found, total spend ${currency.format(total)}.${action.answer ? ` ${action.answer}` : ""}` });
     return;
   }
   if (action.action === "set_budget") {
@@ -593,6 +606,58 @@ function AiResultTable({ heads = [], rows }) {
       <tbody>{rows.map((row, index) => <tr key={index}>{row.map((cell, cellIndex) => <td key={`${index}-${cellIndex}`} data-label={heads[cellIndex] || (cellIndex === 0 ? "Item" : "Value")}>{cell}</td>)}</tr>)}</tbody>
     </table>
   );
+}
+
+function aiSearchScope(action, instruction, defaultYear) {
+  const text = [instruction, action.query, action.answer].filter(Boolean).join(" ");
+  const year = Number(action.year) || yearFromText(text) || defaultYear;
+  const monthIndex = monthIndexFromText(text);
+  const exactDate = exactDateFromText(text);
+  if (exactDate) return { year: exactDate.getFullYear(), monthIndex: exactDate.getMonth() + 1, day: exactDate.getDate(), label: `Date search: ${exactDate.toISOString().slice(0, 10)}` };
+  if (monthIndex) return { year, monthIndex, label: `Month search: ${months[monthIndex - 1]} ${year}` };
+  return { year, label: `Whole-year search: ${year}` };
+}
+
+function filterAiItems(items, scope) {
+  return items.filter((item) => dateMatchesScope(item.purchasedAt || item.transaction?.date, scope)).sort((a, b) => String(a.purchasedAt || "").localeCompare(String(b.purchasedAt || "")));
+}
+
+function filterAiTransactions(items, scope) {
+  return items.filter((item) => dateMatchesScope(item.date, scope)).sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+}
+
+function dateMatchesScope(dateValue, scope) {
+  if (!dateValue || !scope?.year) return true;
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return false;
+  if (date.getFullYear() !== Number(scope.year)) return false;
+  if (scope.monthIndex && date.getMonth() + 1 !== Number(scope.monthIndex)) return false;
+  if (scope.day && date.getDate() !== Number(scope.day)) return false;
+  return true;
+}
+
+function yearFromText(text) {
+  const match = String(text || "").match(/\b(20\d{2})\b/);
+  return match ? Number(match[1]) : null;
+}
+
+function monthIndexFromText(text) {
+  const lower = String(text || "").toLowerCase();
+  const found = months.findIndex((month) => lower.includes(month.toLowerCase()) || lower.includes(fullMonthName(month).toLowerCase()));
+  return found >= 0 ? found + 1 : null;
+}
+
+function exactDateFromText(text) {
+  const value = String(text || "");
+  const iso = value.match(/\b(20\d{2})-(\d{1,2})-(\d{1,2})\b/);
+  if (iso) return new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
+  const uk = value.match(/\b(\d{1,2})[/-](\d{1,2})[/-](20\d{2})\b/);
+  if (uk) return new Date(Number(uk[3]), Number(uk[2]) - 1, Number(uk[1]));
+  return null;
+}
+
+function fullMonthName(shortMonth) {
+  return ({ Jan: "January", Feb: "February", Mar: "March", Apr: "April", May: "May", Jun: "June", Jul: "July", Aug: "August", Sep: "September", Oct: "October", Nov: "November", Dec: "December" })[shortMonth] || shortMonth;
 }
 
 function AnnualView({ data }) {
