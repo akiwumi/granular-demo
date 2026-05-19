@@ -647,7 +647,7 @@ function Finance({ data, refresh }) {
         </div>
         <p>Changing income rewrites the income rows used by monthly surplus, annual surplus, budget planning, reports, and AI context.</p>
       </section>
-      <div className="grid module-list">{modules.map(([title, value]) => <section className="card module-card graph-card" key={title}><div className="metric-title"><span>{title}</span><InfoIcon text={graphExplanation(title, "finance")} /></div><div className="metric-value">{value}</div><Spark id={`finance-${slug(title)}`} title={title} values={series.cash.slice(0, 8)} color="#109c92" from="finance" /></section>)}</div>
+      <div className="grid module-list">{modules.map(([title, value]) => <section className="card module-card graph-card" key={title}><div className="metric-title"><span>{title}</span></div><div className="metric-value">{value}</div><Spark id={`finance-${slug(title)}`} title={title} values={series.cash.slice(0, 8)} color="#109c92" from="finance" /></section>)}</div>
       <div className="grid two block"><section className="card"><h2>Budget burn by category</h2><Bars rows={[["Groceries", 82], ["Bills", 71], ["Kids", 64], ["Pets", 58], ["Transport", 77], ["Subscriptions", 91]]} /></section><section className="card"><h2>This month needs attention</h2><Insights items={["Cap work lunches at £45 per week.", "Increase credit-card repayment by £120.", "Move £250 from grocery underspend to Spain pot."]} /></section></div>
       <div className="block"><TableCard title="Source-backed household assumptions" rows={data.assumptions.values} heads={["Assumption", "Value", "Source basis"]} /></div>
     </>
@@ -1634,7 +1634,7 @@ function BarMiniChart({ values, alt = null, color = "#1d72e8", tall = false, com
 function KpiGrid({ type }) {
   return <div className="grid kpis">{(kpis[type] || kpis.dashboard).map(([title, value, delta, key, down]) => {
     const graphId = `${type}-${slug(title)}`;
-    return <section className="card graph-card" key={title}><div className="metric-title"><span>{title}</span><InfoIcon text={graphExplanation(title, type)} /></div><div className="metric-value">{value}</div><div className={`delta ${down ? "down" : ""}`}>{delta}</div><Spark id={graphId} title={title} values={series[key] || series.cash} color={down ? "#ef4c5f" : key === "forecast" ? "#7c5ce4" : "#1d72e8"} from={routeFromGraphType(type)} /></section>;
+    return <section className="card graph-card" key={title}><div className="metric-title"><span>{title}</span></div><div className="metric-value">{value}</div><div className={`delta ${down ? "down" : ""}`}>{delta}</div><Spark id={graphId} title={title} values={series[key] || series.cash} color={down ? "#ef4c5f" : key === "forecast" ? "#7c5ce4" : "#1d72e8"} from={routeFromGraphType(type)} /></section>;
   })}</div>;
 }
 
