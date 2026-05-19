@@ -745,12 +745,15 @@ function ItemDetail({ item, go }) {
 
 function ReceiptDetailPage({ data, route, go }) {
   const id = routeParam(route, "id") || data.transactions[0]?.id;
+  const from = routeParam(route, "from");
+  const backTarget = from === "alerts" ? "alerts" : "receipts";
+  const backLabel = from === "alerts" ? "Back to alerts" : "Back to receipts";
   const receipt = data.transactions.find((item) => item.id === id) || data.transactions[0];
   const items = data.receiptItems.filter((item) => item.transactionId === receipt.id);
   const categoryRows = categoryTotals(items);
   return (
     <>
-      <PageHead title={`${receipt.merchant} Receipt`} subtitle={`${receipt.date} · ${receipt.owner} · ${receipt.context}`} action={<button className="ghost" onClick={() => go("receipts")}>Back to receipts</button>} />
+      <PageHead title={`${receipt.merchant} Receipt`} subtitle={`${receipt.date} · ${receipt.owner} · ${receipt.context}`} action={<button className="ghost" onClick={() => go(backTarget)}>{backLabel}</button>} />
       <div className="grid two">
         <section className="card">
           <div className="metric-title"><span>Total</span><span>{receipt.id}</span></div>
@@ -957,7 +960,7 @@ function Alerts({ data }) {
           <table className="table alert-table">
             <thead><tr><th>Severity</th><th>Vendor</th><th>Category</th><th>Was</th><th>Now</th><th>Change</th><th>%</th><th>Date</th><th>Status</th><th>Receipt</th></tr></thead>
             <tbody>{filteredAlerts.map((item) => (
-              <tr key={item.id} className="click-row" onClick={() => { window.location.hash = `receipt-detail?id=${item.transactionId}`; }}>
+              <tr key={item.id} className="click-row" onClick={() => { window.location.hash = `receipt-detail?id=${item.transactionId}&from=alerts`; }}>
                 <td data-label="Severity">{statusCell(item.severity)}</td>
                 <td data-label="Vendor">{item.vendor}</td>
                 <td data-label="Category">{item.category}</td>
@@ -967,7 +970,7 @@ function Alerts({ data }) {
                 <td data-label="%"><span className="status warn">+{Number(item.percentChange || 0).toFixed(1)}%</span></td>
                 <td data-label="Date">{item.date}</td>
                 <td data-label="Status">{statusCell(activeAction && selected?.[3] === item.id ? "Actioned" : item.status)}</td>
-                <td data-label="Receipt"><a className="source-link" href={`#receipt-detail?id=${item.transactionId}`} onClick={(event) => event.stopPropagation()}>Open</a></td>
+                <td data-label="Receipt"><a className="source-link" href={`#receipt-detail?id=${item.transactionId}&from=alerts`} onClick={(event) => event.stopPropagation()}>Open</a></td>
               </tr>
             ))}</tbody>
           </table>
@@ -982,7 +985,7 @@ function Alerts({ data }) {
               <label className={`insight-row radio-action ${activeAction === id ? "active" : ""}`} key={id}>
                 <input type="radio" name="alert-action" checked={activeAction === id} onChange={() => setActiveAction(id)} />
                 <div><strong>{label}</strong><p>{description}</p></div>
-                <a className="source-link" href={`#receipt-detail?id=${data.alerts.find((item) => item.id === alertId)?.transactionId || "tx-001"}`} onClick={(event) => event.stopPropagation()}>Receipt</a>
+                <a className="source-link" href={`#receipt-detail?id=${data.alerts.find((item) => item.id === alertId)?.transactionId || "tx-001"}&from=alerts`} onClick={(event) => event.stopPropagation()}>Receipt</a>
               </label>
             ))}
           </div>
