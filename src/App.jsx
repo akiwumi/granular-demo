@@ -441,7 +441,7 @@ function Dashboard({ data }) {
       <div className="grid two block"><section className="card"><h2>Savings buffer trend</h2><strong>£12,850</strong> <span className="delta down">Falling because the mortgage lifts fixed costs</span><Trend /></section><section className="card"><h2>AI Insight Summary <span className="status warn">Pressure</span></h2><Insights items={["The current mortgage assumption makes spending higher than income.", "The savings buffer falls through the year unless income or spending changes.", "Groceries, card charges, subscriptions, and discretionary spending need attention."]} /></section></div>
       <section className="card block"><div className="toolbar-inline"><label className="field">Annual overview year<select value={selectedYear} onChange={(event) => setSelectedYear(Number(event.target.value))}>{years.map((year) => <option key={year}>{year}</option>)}</select></label><a className="ghost link-btn" href="#annual">Open full Annual View</a></div></section>
       <AnnualOverview data={data} year={selectedYear} />
-      <div className="grid three block"><TableCard title="Recent Transactions" rows={data.transactions.map((item) => [item.merchant, item.category, item.owner, currency.format(item.amount), item.date, item.context])} heads={["Merchant", "Category", "Owner", "Amount", "Date", "Context"]} /><TableCard title="Upcoming Bills" rows={[["Council tax", "Jun 1", "£186"], ["British Gas", "Jun 5", "£214"], ["Mersey Water", "Jun 8", "£46"], ["School lunch", "Jun 10", "£62"]]} heads={["Bill", "Due", "Amount"]} /><section className="card"><h2>Money expected</h2><Bars rows={[["Salary", 94], ["Child benefit", 28], ["Refunds", 18], ["Interest", 8]]} /></section></div>
+      <div className="grid three block"><TransactionTable title="Recent Transactions" rows={data.transactions} from="dashboard" /><TableCard title="Upcoming Bills" rows={[["Council tax", "Jun 1", "£186"], ["British Gas", "Jun 5", "£214"], ["Mersey Water", "Jun 8", "£46"], ["School lunch", "Jun 10", "£62"]]} heads={["Bill", "Due", "Amount"]} /><section className="card"><h2>Money expected</h2><Bars rows={[["Salary", 94], ["Child benefit", 28], ["Refunds", 18], ["Interest", 8]]} /></section></div>
     </>
   );
 }
@@ -748,8 +748,8 @@ function ItemDetail({ item, go }) {
 function ReceiptDetailPage({ data, route, go }) {
   const id = routeParam(route, "id") || data.transactions[0]?.id;
   const from = routeParam(route, "from");
-  const backTarget = from === "alerts" ? "alerts" : "receipts";
-  const backLabel = from === "alerts" ? "Back to alerts" : "Back to receipts";
+  const backTarget = from && from !== "receipt-detail" ? from : "receipts";
+  const backLabel = `Back to ${navLabel(backTarget)}`;
   const receipt = data.transactions.find((item) => item.id === id) || data.transactions[0];
   const items = data.receiptItems.filter((item) => item.transactionId === receipt.id);
   const totals = receiptTotals(receipt, items);
@@ -1206,7 +1206,7 @@ function RecordsExplorer({ data }) {
   return (
     <section className="card">
       <div className="toolbar-inline"><h2>Household records</h2><input className="search compact" value={query} placeholder="Filter records..." onChange={(event) => setQuery(event.target.value)} /><select value={category} onChange={(event) => setCategory(event.target.value)}>{categories.map((item) => <option key={item}>{item}</option>)}</select></div>
-      <table className="table"><thead><tr><th>Merchant</th><th>Category</th><th>Owner</th><th>Amount</th><th>Date</th><th>Open</th></tr></thead><tbody>{rows.map((item) => <tr key={item.id}><td data-label="Merchant">{item.merchant}</td><td data-label="Category">{item.category}</td><td data-label="Owner">{item.owner}</td><td data-label="Amount">{currency.format(item.amount)}</td><td data-label="Date">{item.date}</td><td data-label="Open"><a className="source-link" href={`#receipt-detail?id=${item.id}`}>Receipt</a></td></tr>)}</tbody></table>
+      <TransactionTable rows={rows} from={currentBaseRoute()} />
     </section>
   );
 }
@@ -1785,6 +1785,12 @@ function ActionList({ items }) {
     if (action.href) return <a className="insight-row action-row action-link" key={action.label} href={action.href}>{content}</a>;
     return <div className="insight-row action-row" key={action.label}>{content}</div>;
   })}</div>;
+}
+
+function TransactionTable({ title, rows, from = currentBaseRoute() }) {
+  const body = <table className="table transaction-table"><thead><tr><th>Merchant</th><th>Category</th><th>Owner</th><th>Amount</th><th>Date</th><th>Context</th><th>Receipt</th></tr></thead><tbody>{rows.map((item) => <tr key={item.id}><td data-label="Merchant">{item.merchant}</td><td data-label="Category">{item.category}</td><td data-label="Owner">{item.owner}</td><td data-label="Amount">{currency.format(item.amount)}</td><td data-label="Date">{item.date}</td><td data-label="Context">{item.context}</td><td data-label="Receipt"><a className="source-link" href={`#receipt-detail?id=${item.id}&from=${encodeURIComponent(from)}`}>Open receipt</a></td></tr>)}</tbody></table>;
+  if (!title) return body;
+  return <section className="card"><h2>{title}</h2>{body}</section>;
 }
 
 function TableCard({ title, rows, heads }) {
