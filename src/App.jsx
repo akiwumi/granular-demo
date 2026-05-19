@@ -949,24 +949,29 @@ function Alerts({ data }) {
       <PageHead title="Expense Alerts" subtitle="Unusual spending and anomalies detected in your accounts." />
       <KpiGrid type="alerts" />
       <div className="chips block">{[["All", "All Alerts 23"], ["Groceries", "Groceries 8"], ["Kids", "Kids 5"], ["Pets", "Pets 6"], ["Travel", "Travel 2"]].map(([id, label]) => <button key={id} className={`chip ${filter === id ? "active" : ""}`} onClick={() => setFilter(id)}>{label}</button>)}</div>
-      <div className="grid two block">
+      <div className="alerts-layout block">
         <section className="card">
           <h2>{filter} Expense Alerts</h2>
           <p>Click an alert to open the detailed receipt or charge record behind it.</p>
+          <div className="table-scroll">
           <table className="table alert-table">
-            <thead><tr><th>Severity</th><th>Vendor</th><th>Category</th><th>Change</th><th>Date</th><th>Status</th><th>Receipt</th></tr></thead>
+            <thead><tr><th>Severity</th><th>Vendor</th><th>Category</th><th>Was</th><th>Now</th><th>Change</th><th>%</th><th>Date</th><th>Status</th><th>Receipt</th></tr></thead>
             <tbody>{filteredAlerts.map((item) => (
               <tr key={item.id} className="click-row" onClick={() => { window.location.hash = `receipt-detail?id=${item.transactionId}`; }}>
                 <td data-label="Severity">{statusCell(item.severity)}</td>
                 <td data-label="Vendor">{item.vendor}</td>
                 <td data-label="Category">{item.category}</td>
-                <td data-label="Change">{item.changeValue || item.delta}</td>
+                <td data-label="Was">{currency.format(item.previousCharge || 0)}</td>
+                <td data-label="Now">{currency.format(item.currentCharge || 0)}</td>
+                <td data-label="Change"><strong>{currency.format(item.delta || 0)}</strong></td>
+                <td data-label="%"><span className="status warn">+{Number(item.percentChange || 0).toFixed(1)}%</span></td>
                 <td data-label="Date">{item.date}</td>
                 <td data-label="Status">{statusCell(activeAction && selected?.[3] === item.id ? "Actioned" : item.status)}</td>
                 <td data-label="Receipt"><a className="source-link" href={`#receipt-detail?id=${item.transactionId}`} onClick={(event) => event.stopPropagation()}>Open</a></td>
               </tr>
             ))}</tbody>
           </table>
+          </div>
         </section>
         <section className="card">
           <h2>AI Insight Summary</h2>

@@ -235,10 +235,10 @@ export const seed = {
     ...extraReceiptItems
   ],
   alerts: [
-    { id: "al-001", severity: "High", vendor: "Tesco", category: "Groceries", delta: "+£31", changeValue: "+£31 vs usual basket", date: "2024-05-30", status: "New", transactionId: "tx-001", recommendedAction: "Review Tesco basket and substitute high-movement products" },
-    { id: "al-002", severity: "High", vendor: "Credit Card", category: "Charges", delta: "+£46", changeValue: "+£46 new charge", date: "2024-05-29", status: "New", transactionId: "tx-028", recommendedAction: "Schedule repayment to avoid repeat interest" },
-    { id: "al-003", severity: "Medium", vendor: "Mia top-up", category: "Kids", delta: "+£15", changeValue: "+£15 over weekly cap", date: "2024-05-28", status: "Investigating", transactionId: "tx-029", recommendedAction: "Set top-up approval rule for Mia" },
-    { id: "al-004", severity: "Medium", vendor: "Dog food", category: "Pets", delta: "+£9", changeValue: "+£9 vs last pet-food shop", date: "2024-05-27", status: "Reviewing", transactionId: "tx-030", recommendedAction: "Move dog food to planned monthly pet basket" }
+    { id: "al-001", severity: "High", vendor: "Tesco", category: "Groceries", previousCharge: 53.31, currentCharge: 84.31, delta: 31, percentChange: 58.2, date: "2024-05-30", status: "New", transactionId: "tx-001", recommendedAction: "Review Tesco basket and substitute high-movement products" },
+    { id: "al-002", severity: "High", vendor: "Credit Card", category: "Charges", previousCharge: 0, currentCharge: 46, delta: 46, percentChange: 100, date: "2024-05-29", status: "New", transactionId: "tx-028", recommendedAction: "Schedule repayment to avoid repeat interest" },
+    { id: "al-003", severity: "Medium", vendor: "Mia top-up", category: "Kids", previousCharge: 35, currentCharge: 50, delta: 15, percentChange: 42.9, date: "2024-05-28", status: "Investigating", transactionId: "tx-029", recommendedAction: "Set top-up approval rule for Mia" },
+    { id: "al-004", severity: "Medium", vendor: "Dog food", category: "Pets", previousCharge: 9.9, currentCharge: 18.9, delta: 9, percentChange: 90.9, date: "2024-05-27", status: "Reviewing", transactionId: "tx-030", recommendedAction: "Move dog food to planned monthly pet basket" }
   ],
   reports: [
     { id: "rp-001", name: "May Household Summary", type: "Financial", generated: "2024-05-31 09:15", owner: "Sarah Hughes", format: "PDF", status: "Complete" },

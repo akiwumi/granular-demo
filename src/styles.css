@@ -33,6 +33,33 @@ button:disabled {
 .table tr.click-row:hover {
   background: #f6f9ff;
 }
+.alerts-layout {
+  display: grid;
+  grid-template-columns: minmax(720px, 1.45fr) minmax(360px, .8fr);
+  gap: 18px;
+  align-items: start;
+}
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+.alert-table {
+  min-width: 980px;
+  table-layout: auto;
+}
+.alert-table th,
+.alert-table td {
+  padding: 14px 12px;
+  white-space: nowrap;
+}
+.alert-table th:nth-child(2),
+.alert-table td:nth-child(2) {
+  min-width: 130px;
+}
+.alert-table th:nth-child(3),
+.alert-table td:nth-child(3) {
+  min-width: 105px;
+}
 .alert-table td {
   vertical-align: middle;
 }
@@ -67,6 +94,14 @@ button:disabled {
   margin: 6px 0 0;
   color: #166534;
   font-weight: 500;
+}
+@media (max-width: 1180px) {
+  .alerts-layout {
+    grid-template-columns: 1fr;
+  }
+  .alert-table {
+    min-width: 900px;
+  }
 }
 .item-detail small {
   display: block;
